@@ -1,5 +1,5 @@
 // Service Worker – cache-first for offline support
-const CACHE = 'shuttle-v0.0.0';
+const CACHE = 'shuttle-v0.0.10';
 const ASSETS = ['./index.html', './manifest.json', './timetable.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
