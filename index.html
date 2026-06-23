@@ -4,11 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="シティハウス小金井公園">
-<meta name="theme-color" content="#1a3317">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#ebebeb">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#111111">
 <link rel="manifest" href="./manifest.json">
 <link rel="apple-touch-icon" href="./icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
 <title>シティハウス小金井公園 シャトルバス</title>
 <style>
 /* ─────────────────────────────────────────
@@ -80,11 +82,20 @@
 html { height:100%; }
 
 body {
-  font-family: -apple-system, 'Hiragino Kaku Gothic ProN', sans-serif;
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    "Hiragino Sans",
+    "Hiragino Kaku Gothic ProN",
+    "Yu Gothic",
+    sans-serif;
   background: var(--bg);
   color: var(--text);
   min-height: 100%;
   overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
   /* subtle gradient mesh */
   background-image:
     radial-gradient(ellipse at 20% 20%, rgba(0,0,0,0.04) 0%, transparent 60%),
@@ -976,9 +987,9 @@ const STOPS = [
   {
     name:'C棟エントランス前', dest:'武蔵小金井駅行', lat:35.7207986, lng:139.5107950,
     times:[
-      {h:6,m:35,s2:false},{h:6,m:50,s2:true},
-      {h:7,m:5,s2:false},{h:7,m:20,s2:false},{h:7,m:35,s2:false},{h:7,m:50,s2:true},
-      {h:8,m:5,s2:false},{h:8,m:25,s2:true},{h:8,m:45,s2:false},
+      
+      
+      
       {h:9,m:5,s2:true},{h:9,m:25,s2:false},
       {h:10,m:5,s2:false},{h:10,m:45,s2:false},
       {h:11,m:25,s2:false},{h:11,m:45,s2:false},
