@@ -791,6 +791,83 @@ body {
   color: var(--text3);
   padding: 24px 0 calc(var(--safe-bottom) + 16px);
 }
+/* ホーム画面追加ガイドモーダル */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 300;
+  display: flex;
+  align-items: flex-end;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s;
+}
+.modal-overlay.show {
+  opacity: 1;
+  pointer-events: all;
+}
+.modal-sheet {
+  width: 100%;
+  background: var(--glass-bg);
+  backdrop-filter: var(--overlay-blur);
+  -webkit-backdrop-filter: var(--overlay-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px 20px 0 0;
+  padding: 20px 20px calc(var(--safe-bottom) + 24px);
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(.4,0,.2,1);
+}
+.modal-overlay.show .modal-sheet {
+  transform: translateY(0);
+}
+.modal-title {
+  font-size: 17px;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 16px;
+}
+.modal-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.modal-step-num {
+  width: 24px; height: 24px;
+  background: var(--text);
+  color: var(--bg);
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.modal-step-text {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text);
+  padding-top: 2px;
+}
+.modal-step-text span {
+  font-weight: 700;
+}
+.modal-close {
+  width: 100%;
+  margin-top: 20px;
+  padding: 14px;
+  border-radius: 12px;
+  border: none;
+  background: var(--text);
+  color: var(--bg);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
 </style>
 </head>
 <body>
@@ -969,6 +1046,11 @@ body {
       <div class="settings-section-title">その他</div>
       <div class="settings-card">
         <div class="setting-row" style="padding:0">
+          <button class="setting-action-btn" onclick="showPwaModal()">
+            ホーム画面に追加
+          </button>
+        </div>
+        <div class="setting-row" style="padding:0">
           <button class="setting-action-btn" onclick="copyUrlAndToast()">
             URLをコピー
           </button>
@@ -1002,6 +1084,26 @@ body {
 </div><!-- /main -->
 
 <div class="toast" id="toast"></div>
+
+<!-- ホーム画面追加ガイドモーダル -->
+<div class="modal-overlay" id="pwa-modal" onclick="closePwaModal(event)">
+  <div class="modal-sheet">
+    <div class="modal-title">ホーム画面に追加する方法</div>
+    <div class="modal-step">
+      <div class="modal-step-num">1</div>
+      <div class="modal-step-text">画面下部の <span>共有ボタン（□↑）</span> をタップ</div>
+    </div>
+    <div class="modal-step">
+      <div class="modal-step-num">2</div>
+      <div class="modal-step-text"><span>「ホーム画面に追加」</span> をタップ</div>
+    </div>
+    <div class="modal-step">
+      <div class="modal-step-num">3</div>
+      <div class="modal-step-text">右上の <span>「追加」</span> をタップして完了</div>
+    </div>
+    <button class="modal-close" onclick="closePwaModal()">閉じる</button>
+  </div>
+</div>
 
 <script>
 /* ═══════════════════════════════════════════════════════
@@ -1675,6 +1777,17 @@ function showGpsError(msg, showRetry) {
 /* PWA */
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('./sw.js').catch(()=>{});
+}
+
+function showPwaModal(){
+  document.getElementById('pwa-modal').classList.add('show');
+}
+
+function closePwaModal(e){
+  // オーバーレイ自体のクリック or 閉じるボタン
+  if(!e || e.target === document.getElementById('pwa-modal')){
+    document.getElementById('pwa-modal').classList.remove('show');
+  }
 }
 
 function copyUrlAndToast(){
