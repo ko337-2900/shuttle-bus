@@ -1424,7 +1424,14 @@ function showView(v){
     document.getElementById('view-'+id).style.display = v===id?'block':'none';
     document.getElementById('tab-'+id).classList.toggle('active', v===id);
   });
-  if(v==='timetable'){ renderTimetable(); setTimeout(scrollToNowLine, 80); }
+  if(v==='timetable'){
+    // 時刻表タブを開く時に停留所ボタンのactive状態をcurrentStopIdxと同期
+    document.querySelectorAll('.stop-btn').forEach((b,i)=>{
+      b.classList.toggle('active', i===currentStopIdx);
+    });
+    renderTimetable();
+    setTimeout(scrollToNowLine, 80);
+  }
 }
 
 /* ═══════════════════════════════════════════════════════
