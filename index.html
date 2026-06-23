@@ -784,6 +784,13 @@ body {
   font-weight: 700;
   box-shadow: 0 2px 8px rgba(0,0,0,0.18);
 }
+/* コピーライト */
+.copyright {
+  text-align: center;
+  font-size: 11px;
+  color: var(--text3);
+  padding: 24px 0 calc(var(--safe-bottom) + 16px);
+}
 </style>
 </head>
 <body>
@@ -970,12 +977,27 @@ body {
       </div>
     </div>
 
+    <div class="settings-section">
+      <div class="settings-section-title">アプリ情報</div>
+      <div class="settings-card">
+        <div class="setting-row">
+          <div class="setting-label">バージョン</div>
+          <div style="font-size:15px;color:var(--text3)">Ver. 0.0.0</div>
+        </div>
+        <div class="setting-row">
+          <div class="setting-label">ビルド</div>
+          <div style="font-size:15px;color:var(--text3)">2026-06-24</div>
+        </div>
+      </div>
+    </div>
+
     <div class="notice">
       ※設定は端末に保存されます（再起動後も維持）。
     </div>
   </div>
 
 </div><!-- /main -->
+<div class="copyright">© 2026 ooisan</div>
 
 <div class="toast" id="toast"></div>
 
