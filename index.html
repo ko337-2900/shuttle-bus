@@ -838,9 +838,9 @@ body {
   ══════════════════════════════════════ -->
   <div id="view-timetable">
     <div class="stop-selector">
-      <button class="stop-btn active" onclick="setStop(0,this)">C棟</button>
-      <button class="stop-btn"        onclick="setStop(1,this)">シャトルバスステーション</button>
-      <button class="stop-btn"        onclick="setStop(2,this)">武蔵小金井駅</button>
+      <button class="stop-btn active" onclick="setTimetableStop(0,this)">C棟</button>
+      <button class="stop-btn"        onclick="setTimetableStop(1,this)">シャトルバスステーション</button>
+      <button class="stop-btn"        onclick="setTimetableStop(2,this)">武蔵小金井駅</button>
     </div>
     <div class="tt-now-row">現在時刻 <span class="tt-time" id="tt-time">--:--</span></div>
     <div id="timetable-body"></div>
@@ -1155,7 +1155,8 @@ function applySettingsUI(){
 /* ═══════════════════════════════════════════════════════
    STATE
 ═══════════════════════════════════════════════════════ */
-let currentStopIdx = resolveStop(); // 起動時はモードで決定
+let currentStopIdx = resolveStop(); // カウントダウン用（設定モードで決定）
+let timetableStopIdx = 0;             // 時刻表用（独立して切り替え可）
 
 /* ═══════════════════════════════════════════════════════
    RENDER: COUNTDOWN
@@ -1343,7 +1344,7 @@ function renderTimetable(){
     return;
   }
 
-  const stop = STOPS[currentStopIdx];
+  const stop = STOPS[timetableStopIdx];
   const body = document.getElementById('timetable-body');
 
   const byHour = {};
@@ -1406,6 +1407,16 @@ function scrollToNowLine(){
 /* ═══════════════════════════════════════════════════════
    UI CONTROLS
 ═══════════════════════════════════════════════════════ */
+// 時刻表専用の停留所切替（カウントダウンに影響しない）
+function setTimetableStop(idx, btn){
+  timetableStopIdx = idx;
+  document.querySelectorAll('.stop-btn').forEach((b,i)=>{
+    b.classList.toggle('active', i===idx);
+  });
+  renderTimetable();
+  setTimeout(scrollToNowLine, 80);
+}
+
 function setStop(idx, btn, auto=false){
   currentStopIdx = idx;
   document.querySelectorAll('.stop-btn').forEach((b,i)=>{
@@ -1425,9 +1436,9 @@ function showView(v){
     document.getElementById('tab-'+id).classList.toggle('active', v===id);
   });
   if(v==='timetable'){
-    // 時刻表タブを開く時に停留所ボタンのactive状態をcurrentStopIdxと同期
+    // 時刻表タブを開く時に停留所ボタンのactive状態をtimetableStopIdxと同期
     document.querySelectorAll('.stop-btn').forEach((b,i)=>{
-      b.classList.toggle('active', i===currentStopIdx);
+      b.classList.toggle('active', i===timetableStopIdx);
     });
     renderTimetable();
     setTimeout(scrollToNowLine, 80);
