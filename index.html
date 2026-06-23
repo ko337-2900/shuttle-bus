@@ -743,6 +743,36 @@ body {
   font-weight: 700;
   box-shadow: 0 1px 4px rgba(0,0,0,0.10);
 }
+/* ─── 乗車場所モードボタン（ピル型） ─── */
+.stop-mode-btns {
+  display: flex;
+  flex-direction: row;
+  gap: 6px;
+  width: 100%;
+}
+.stop-mode-btn {
+  flex: 1;
+  padding: 10px 4px;
+  border-radius: 50px;
+  border: 1.5px solid var(--chip-border);
+  background: transparent;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text2);
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.18s, border-color 0.18s, color 0.18s, box-shadow 0.18s;
+  -webkit-tap-highlight-color: transparent;
+  white-space: nowrap;
+}
+.stop-mode-btn:active { opacity: 0.6; }
+.stop-mode-btn.active {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--bg);
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+}
 </style>
 </head>
 <body>
@@ -819,11 +849,11 @@ body {
     <div class="settings-section">
       <div class="settings-section-title">乗車場所の決め方</div>
       <div class="settings-card">
-        <div class="setting-row" style="padding:0">
+        <div class="setting-row" style="padding:10px 12px">
           <div class="stop-mode-btns">
             <button class="stop-mode-btn" id="mode-btn-auto"   onclick="setStopMode('auto')">時間帯で自動</button>
             <button class="stop-mode-btn" id="mode-btn-manual" onclick="setStopMode('manual')">手動で固定</button>
-            <button class="stop-mode-btn" id="mode-btn-gps"    onclick="setStopMode('gps')">📍 現在地</button>
+            <button class="stop-mode-btn" id="mode-btn-gps"    onclick="setStopMode('gps')">現在地</button>
           </div>
         </div>
       </div>
@@ -1333,6 +1363,11 @@ function renderTimetable(){
   document.getElementById('tt-time').textContent=`${p(nowH)}:${p(nowM)}`;
 }
 
+function scrollToNowLine(){
+  const line = document.querySelector('.now-line');
+  if(line) line.scrollIntoView({ behavior:'smooth', block:'center' });
+}
+
 /* ═══════════════════════════════════════════════════════
    UI CONTROLS
 ═══════════════════════════════════════════════════════ */
@@ -1354,7 +1389,7 @@ function showView(v){
     document.getElementById('view-'+id).style.display = v===id?'block':'none';
     document.getElementById('tab-'+id).classList.toggle('active', v===id);
   });
-  if(v==='timetable') renderTimetable();
+  if(v==='timetable'){ renderTimetable(); setTimeout(scrollToNowLine, 80); }
 }
 
 /* ═══════════════════════════════════════════════════════
