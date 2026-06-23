@@ -819,11 +819,11 @@ body {
     <div class="settings-section">
       <div class="settings-section-title">乗車場所の決め方</div>
       <div class="settings-card">
-        <div class="setting-row" style="padding:6px 8px">
+        <div class="setting-row" style="padding:0">
           <div class="stop-mode-btns">
             <button class="stop-mode-btn" id="mode-btn-auto"   onclick="setStopMode('auto')">時間帯で自動</button>
             <button class="stop-mode-btn" id="mode-btn-manual" onclick="setStopMode('manual')">手動で固定</button>
-            <button class="stop-mode-btn" id="mode-btn-gps"    onclick="setStopMode('gps')">現在地</button>
+            <button class="stop-mode-btn" id="mode-btn-gps"    onclick="setStopMode('gps')">📍 現在地</button>
           </div>
         </div>
       </div>
@@ -1442,6 +1442,7 @@ function detectNearestStop(){
   navigator.geolocation.getCurrentPosition(
     pos => {
       const { latitude: lat, longitude: lng } = pos.coords;
+
       // Haversine距離（m）
       function dist(s){
         const R = 6371000;
@@ -1451,14 +1452,27 @@ function detectNearestStop(){
                   Math.cos(lat*Math.PI/180) * Math.cos(s.lat*Math.PI/180) * Math.sin(dLng/2)**2;
         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
       }
-      const dists = STOPS.map((s,i) => ({ i, d: dist(s) }));
-      dists.sort((a,b) => a.d - b.d);
-      const nearest = dists[0];
-      // 停留所ボタンを取得してsetStop
+
+      // マンション内判定：C棟 or ステーションから200m以内
+      const MANSION_RADIUS = 200;
+      const dC   = dist(STOPS[0]); // C棟
+      const dSta = dist(STOPS[1]); // ステーション
+      const inMansion = dC <= MANSION_RADIUS || dSta <= MANSION_RADIUS;
+
+      let idx;
+      if(inMansion){
+        // マンション内 → C棟 or ステーションの近い方
+        idx = dC <= dSta ? 0 : 1;
+      } else {
+        // マンション外 → 武蔵小金井駅
+        idx = 2;
+      }
+
       const btns = document.querySelectorAll('.stop-btn');
-      S.lastStop = nearest.i; saveSettings(S);
-      setStop(nearest.i, btns[nearest.i] || null);
-      showToast(`📍 ${STOPS[nearest.i].name}（${Math.round(nearest.d)}m）に切り替えました`);
+      S.lastStop = idx; saveSettings(S);
+      setStop(idx, btns[idx] || null);
+      const label = inMansion ? `マンション内（${Math.round(Math.min(dC,dSta))}m）` : `マンション外（${Math.round(dist(STOPS[2]))}m）`;
+      showToast(`📍 ${STOPS[idx].name} に切替 ${label}`);
     },
     err => {
       showToast('位置情報を取得できませんでした');
