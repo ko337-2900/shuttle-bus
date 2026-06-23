@@ -1774,9 +1774,25 @@ function showGpsError(msg, showRetry) {
   gpsSection.appendChild(div);
 }
 
-/* PWA */
-if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('./sw.js').catch(()=>{});
+/* PWA – Service Worker登録 & 更新時自動リロード */
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').then(reg => {
+
+    // 新しいSWがインストール完了 → 即座にactivateさせる
+    reg.addEventListener('updatefound', () => {
+      const newWorker = reg.installing;
+      newWorker.addEventListener('statechange', () => {
+        // activated になったらページをリロードして新バージョンを反映
+        if (newWorker.state === 'activated') {
+          console.log('[SW] 新バージョンに更新しました。リロードします。');
+          location.reload();
+        }
+      });
+    });
+
+  }).catch(err => {
+    console.error('[SW] 登録失敗:', err);
+  });
 }
 
 function showPwaModal(){
