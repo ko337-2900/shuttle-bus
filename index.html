@@ -983,74 +983,64 @@ body {
 /* ═══════════════════════════════════════════════════════
    DATA
 ═══════════════════════════════════════════════════════ */
-const STOPS = [
-  {
-    name:'C棟エントランス前', dest:'武蔵小金井駅行', lat:35.7207986, lng:139.5107950,
-    times:[
-      
-      
-      
-      {h:9,m:5,s2:true},{h:9,m:25,s2:false},
-      {h:10,m:5,s2:false},{h:10,m:45,s2:false},
-      {h:11,m:25,s2:false},{h:11,m:45,s2:false},
-      {h:12,m:25,s2:false},{h:12,m:45,s2:false},
-      {h:13,m:25,s2:false},{h:13,m:45,s2:false},
-      {h:14,m:5,s2:false},{h:14,m:45,s2:false},
-      {h:15,m:20,s2:false},
-      {h:17,m:5,s2:true},{h:17,m:25,s2:false},{h:17,m:45,s2:true},
-      {h:18,m:5,s2:false},{h:18,m:25,s2:false},{h:18,m:45,s2:false},
-      {h:19,m:5,s2:true},{h:19,m:25,s2:false},{h:19,m:45,s2:true},
-      {h:20,m:5,s2:true},{h:20,m:25,s2:false},{h:20,m:45,s2:true},
-      {h:21,m:5,s2:true},{h:21,m:20,s2:false},{h:21,m:35,s2:true},{h:21,m:50,s2:false},
-      {h:22,m:5,s2:true},{h:22,m:20,s2:false},{h:22,m:35,s2:true},
-      {h:23,m:5,s2:true},{h:23,m:20,s2:false},{h:23,m:35,s2:true},
-    ]
-  },
-  {
-    name:'シャトルバスステーション前', dest:'武蔵小金井駅行', lat:35.7200391, lng:139.5099135,
-    times:[
-      {h:6,m:35,s2:false},{h:6,m:50,s2:true},
-      {h:7,m:5,s2:false},{h:7,m:20,s2:true},{h:7,m:35,s2:false},{h:7,m:50,s2:true},
-      {h:8,m:5,s2:false},{h:8,m:25,s2:true},{h:8,m:45,s2:false},
-      {h:9,m:7,s2:false},{h:9,m:47,s2:false},
-      {h:10,m:7,s2:false},{h:10,m:47,s2:false},
-      {h:11,m:7,s2:false},{h:11,m:47,s2:false},
-      {h:12,m:7,s2:false},{h:12,m:47,s2:false},
-      {h:13,m:7,s2:false},{h:13,m:47,s2:false},
-      {h:14,m:7,s2:false},{h:14,m:47,s2:false},
-      {h:15,m:22,s2:false},
-      {h:17,m:7,s2:true},{h:17,m:27,s2:false},{h:17,m:47,s2:true},
-      {h:18,m:7,s2:false},{h:18,m:27,s2:false},{h:18,m:47,s2:false},
-      {h:19,m:7,s2:true},{h:19,m:27,s2:false},{h:19,m:47,s2:true},
-      {h:20,m:7,s2:true},{h:20,m:27,s2:false},{h:20,m:47,s2:true},
-      {h:21,m:7,s2:true},{h:21,m:22,s2:false},{h:21,m:37,s2:true},{h:21,m:52,s2:false},
-      {h:22,m:7,s2:true},{h:22,m:22,s2:false},{h:22,m:37,s2:true},
-      {h:23,m:7,s2:true},{h:23,m:22,s2:false},{h:23,m:37,s2:true},
-    ]
-  },
-  {
-    name:'武蔵小金井駅付近', dest:'マンション行', lat:35.7011212, lng:139.5039225,
-    times:[
-      {h:6,m:50,s2:false},
-      {h:7,m:5,s2:false},{h:7,m:20,s2:false},{h:7,m:35,s2:true},{h:7,m:50,s2:false},
-      {h:8,m:10,s2:true},{h:8,m:25,s2:false},{h:8,m:45,s2:true},
-      {h:9,m:0,s2:false},{h:9,m:25,s2:true},
-      {h:10,m:25,s2:false},
-      {h:11,m:5,s2:false},{h:11,m:45,s2:false},
-      {h:12,m:5,s2:false},{h:12,m:25,s2:false},{h:12,m:45,s2:false},
-      {h:13,m:5,s2:false},{h:13,m:45,s2:false},
-      {h:14,m:25,s2:false},
-      {h:15,m:5,s2:false},{h:15,m:40,s2:false},
-      {h:17,m:5,s2:false},{h:17,m:25,s2:true},{h:17,m:45,s2:false},
-      {h:18,m:5,s2:true},{h:18,m:25,s2:false},{h:18,m:45,s2:true},
-      {h:19,m:5,s2:false},{h:19,m:25,s2:true},{h:19,m:45,s2:false},
-      {h:20,m:5,s2:false},{h:20,m:25,s2:true},{h:20,m:45,s2:false},
-      {h:21,m:5,s2:true},{h:21,m:20,s2:false},{h:21,m:35,s2:false},{h:21,m:50,s2:true},
-      {h:22,m:5,s2:false},{h:22,m:20,s2:true},{h:22,m:35,s2:false},{h:22,m:50,s2:true},
-      {h:23,m:5,s2:false},{h:23,m:20,s2:true},{h:23,m:35,s2:false},
-    ]
+// ─────────────────────────────────────────────────────────
+// 時刻表データ（外部JSONから読み込み・フォールバック付き）
+// timetable.json の構造:
+//   routes[] > stops[] + schedules{ weekday, saturday, sunday }
+//   将来的に複数路線・曜日ダイヤを追加可能
+// ─────────────────────────────────────────────────────────
+
+// アプリ全体で使うSTOPS配列（JSON読み込み後に上書き）
+let STOPS = [];
+
+// 現在の曜日タイプを返す（将来の祝日対応用フック）
+function getDayType(date) {
+  const dow = date.getDay();
+  if (dow === 0) return 'sunday';
+  if (dow === 6) return 'saturday';
+  return 'weekday';
+}
+
+// JSONデータからSTOPS配列を構築する
+// stops[]: 停留所メタ情報、schedules: 曜日別時刻データ
+function buildStops(route, dayType) {
+  const schedule = route.schedules[dayType];
+  return route.stops.map(stop => {
+    const times = schedule ? (schedule[stop.id] || []) : [];
+    // timesを秒数でソート済みに（高速検索のため）
+    const sorted = [...times].sort((a, b) => a.h * 60 + a.m - (b.h * 60 + b.m));
+    return {
+      name:  stop.name,
+      dest:  stop.dest,
+      lat:   stop.lat,
+      lng:   stop.lng,
+      times: sorted,
+    };
+  });
+}
+
+// timetable.json を fetch して STOPS を初期化する
+// 失敗時はフォールバック（空配列）で継続
+async function loadTimetable() {
+  try {
+    const res = await fetch('./timetable.json');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    // 最初のルートを使用（将来: route IDで切替可能）
+    const route   = data.routes[0];
+    const dayType = getDayType(new Date());
+    STOPS = buildStops(route, dayType);
+
+    // データなし（土日など未定義ダイヤ）の場合
+    if (STOPS.every(s => s.times.length === 0)) {
+      console.warn('[Timetable] No schedule for dayType:', dayType);
+    }
+  } catch (err) {
+    console.error('[Timetable] Failed to load timetable.json:', err);
+    STOPS = []; // フォールバック: 空データで継続
   }
-];
+}
 
 /* ═══════════════════════════════════════════════════════
    HOLIDAYS (将来は SPECIAL_CLOSURES に追記するだけ)
@@ -1126,7 +1116,12 @@ function stopByTime(){
   const hm  = now.getHours()*60 + now.getMinutes();
   const [eh, em] = S.eveningStart.split(':').map(Number);
   const evening  = eh*60 + em;
-  return hm >= evening ? S.eveningStop : S.morningStop;
+  const morning  = 6 * 60; // 6:00
+
+  // 6:00〜切替時刻 → 朝の停留所
+  // 切替時刻〜翌5:59 → 夕方の停留所
+  if (hm >= morning && hm < evening) return S.morningStop;
+  return S.eveningStop;
 }
 
 function applyDark(on){
@@ -1175,6 +1170,15 @@ function renderCountdown(){
   const label = document.getElementById('upcoming-label');
   const list  = document.getElementById('upcoming-list');
   const now   = new Date();
+
+  // ── データなし ──
+  if (!STOPS.length || !STOPS[currentStopIdx]) {
+    card.className = 'glass countdown-card closed';
+    label.style.display = 'none';
+    list.innerHTML = '';
+    card.innerHTML = '<div class="closed-icon">📋</div><div class="closed-title">時刻表データがありません</div>';
+    return;
+  }
 
   // ── 運休日 ──
   if(!isOperatingDay(now)){
@@ -1331,6 +1335,14 @@ function renderUpcoming(upcoming, forceRebuild){
 function renderTimetable(){
   const now = new Date();
   const ns  = nowSecs();
+
+  // データなし
+  if (!STOPS.length || !STOPS[currentStopIdx]) {
+    document.getElementById('timetable-body').innerHTML =
+      '<div style="padding:20px;text-align:center;color:var(--text3)">時刻表データがありません</div>';
+    return;
+  }
+
   const stop = STOPS[currentStopIdx];
   const body = document.getElementById('timetable-body');
 
@@ -1406,23 +1418,42 @@ function showView(v){
 /* ═══════════════════════════════════════════════════════
    INIT
 ═══════════════════════════════════════════════════════ */
-applySettingsUI();
-document.getElementById('sc-name').textContent = STOPS[currentStopIdx].name;
+async function init() {
+  // 設定UI適用
+  applySettingsUI();
+  applyStopModeUI(S.stopMode);
 
+  // 時刻表データをJSONから非同期読み込み
+  await loadTimetable();
 
-applyStopModeUI(S.stopMode);
-updateManualBtns(currentStopIdx);
-renderCountdown();
-renderTimetable();
-
-setInterval(()=>{
-  if(S.stopMode === 'auto'){
-    const auto = stopByTime();
-    if(auto !== currentStopIdx) setStop(auto, null, true);
+  // 停留所名をヘッダーに反映（データ読み込み後）
+  if (STOPS.length && STOPS[currentStopIdx]) {
+    document.getElementById('sc-name').textContent = STOPS[currentStopIdx].name;
   }
+
+  updateManualBtns(currentStopIdx);
   renderCountdown();
-  if(document.getElementById('view-timetable').style.display!=='none') renderTimetable();
-}, 1000);
+  renderTimetable();
+
+  // stopModeが「現在地」の場合は起動時に自動取得
+  if (S.stopMode === 'gps') {
+    detectNearestStop();
+  }
+
+  // 毎秒更新タイマー
+  setInterval(() => {
+    if (S.stopMode === 'auto') {
+      const auto = stopByTime();
+      if (auto !== currentStopIdx) setStop(auto, null, true);
+    }
+    renderCountdown();
+    if (document.getElementById('view-timetable').style.display !== 'none') {
+      renderTimetable();
+    }
+  }, 1000);
+}
+
+init();
 
 /* 乗車場所モード */
 function resolveStop(){
@@ -1478,53 +1509,112 @@ function updateManualBtns(idx){
   });
 }
 
-/* 現在地から最寄り停留所を検出 */
-function detectNearestStop(){
-  if(!navigator.geolocation){
-    showToast('位置情報が使えません');
+/* ─────────────────────────────────────────────────────────
+ * 現在地から最寄り停留所を検出
+ * - マンション内（C棟 or ステーションから200m以内）→ 近い方を選択
+ * - マンション外 → 武蔵小金井駅
+ * ───────────────────────────────────────────────────────── */
+function detectNearestStop() {
+  // GPS未対応ブラウザ
+  if (!navigator.geolocation) {
+    showGpsError('このブラウザは位置情報に対応していません', false);
     return;
   }
-  showToast('現在地を取得中…');
+
+  // 取得中ローディング表示
+  showGpsLoading(true);
+
   navigator.geolocation.getCurrentPosition(
+    // ── 成功 ──
     pos => {
+      showGpsLoading(false);
       const { latitude: lat, longitude: lng } = pos.coords;
 
       // Haversine距離（m）
-      function dist(s){
-        const R = 6371000;
+      function dist(s) {
+        const R    = 6371000;
         const dLat = (s.lat - lat) * Math.PI / 180;
         const dLng = (s.lng - lng) * Math.PI / 180;
-        const a = Math.sin(dLat/2)**2 +
-                  Math.cos(lat*Math.PI/180) * Math.cos(s.lat*Math.PI/180) * Math.sin(dLng/2)**2;
-        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        const a    = Math.sin(dLat / 2) ** 2 +
+                     Math.cos(lat * Math.PI / 180) * Math.cos(s.lat * Math.PI / 180) *
+                     Math.sin(dLng / 2) ** 2;
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
       }
 
       // マンション内判定：C棟 or ステーションから200m以内
       const MANSION_RADIUS = 200;
       const dC   = dist(STOPS[0]); // C棟
-      const dSta = dist(STOPS[1]); // ステーション
+      const dSta = dist(STOPS[1]); // シャトルバスステーション
       const inMansion = dC <= MANSION_RADIUS || dSta <= MANSION_RADIUS;
 
-      let idx;
-      if(inMansion){
-        // マンション内 → C棟 or ステーションの近い方
-        idx = dC <= dSta ? 0 : 1;
-      } else {
-        // マンション外 → 武蔵小金井駅
-        idx = 2;
-      }
+      const idx = inMansion
+        ? (dC <= dSta ? 0 : 1) // マンション内 → 近い方
+        : 2;                    // マンション外 → 武蔵小金井駅
 
+      S.lastStop = idx;
+      saveSettings(S);
       const btns = document.querySelectorAll('.stop-btn');
-      S.lastStop = idx; saveSettings(S);
       setStop(idx, btns[idx] || null);
-      const label = inMansion ? `マンション内（${Math.round(Math.min(dC,dSta))}m）` : `マンション外（${Math.round(dist(STOPS[2]))}m）`;
-      showToast(`📍 ${STOPS[idx].name} に切替 ${label}`);
+
+      const distLabel = inMansion
+        ? `マンション内（${Math.round(Math.min(dC, dSta))}m）`
+        : `マンション外（${Math.round(dist(STOPS[2]))}m）`;
+      showToast(`📍 ${STOPS[idx].name} に切替 ${distLabel}`);
     },
+
+    // ── 失敗 ──
     err => {
-      showToast('位置情報を取得できませんでした');
+      showGpsLoading(false);
+      console.error('[GPS] 取得失敗:', err.code, err.message);
+
+      const messages = {
+        1: '位置情報の使用が許可されていません',    // PERMISSION_DENIED
+        2: 'GPS信号を取得できませんでした',          // POSITION_UNAVAILABLE
+        3: '位置情報の取得がタイムアウトしました',   // TIMEOUT
+      };
+      const msg = messages[err.code] || `位置情報エラー（コード: ${err.code}）`;
+      showGpsError(msg, true); // 再取得ボタンあり
     },
-    { enableHighAccuracy: true, timeout: 8000 }
+
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
   );
+}
+
+// GPS取得中ローディング表示
+function showGpsLoading(on) {
+  const btn = document.querySelector('[onclick="detectNearestStop()"]');
+  if (!btn) return;
+  btn.textContent = on ? '📍 取得中…' : '📍 今すぐ最寄り停留所を取得';
+  btn.disabled = on;
+}
+
+// GPSエラー表示（再取得ボタン付き）
+function showGpsError(msg, showRetry) {
+  const gpsSection = document.getElementById('section-gps');
+  if (!gpsSection) { showToast(msg); return; }
+
+  // 既存エラー表示を削除
+  const existing = gpsSection.querySelector('.gps-error');
+  if (existing) existing.remove();
+
+  const div = document.createElement('div');
+  div.className = 'gps-error';
+  div.style.cssText = 'font-size:13px;color:#c0392b;padding:8px 16px 0;line-height:1.6';
+  div.innerHTML = `⚠️ ${msg}`;
+
+  if (showRetry) {
+    const retryBtn = document.createElement('button');
+    retryBtn.textContent = '再取得';
+    retryBtn.style.cssText = [
+      'display:block','margin-top:8px','padding:8px 20px',
+      'border-radius:8px','border:none','background:var(--text)',
+      'color:var(--bg)','font-size:14px','font-weight:600','cursor:pointer'
+    ].join(';');
+    retryBtn.onclick = () => { div.remove(); detectNearestStop(); };
+    div.appendChild(retryBtn);
+  }
+
+  gpsSection.appendChild(div);
 }
 
 /* PWA */
