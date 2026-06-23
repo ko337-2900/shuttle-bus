@@ -1356,6 +1356,9 @@ function renderTimetable(){
   const nowH = now.getHours(), nowM = now.getMinutes();
 
   body.innerHTML='';
+  const nowLineHTML = `<div class="now-line"><div class="now-line-dot"></div><div class="now-line-bar"></div><div class="now-line-text">${p(nowH)}:${p(nowM)}</div></div>`;
+  let nowLineInserted = false;
+
   Object.keys(byHour).map(Number).sort((a,b)=>a-b).forEach(h=>{
     const block = document.createElement('div');
     block.className='hour-block';
@@ -1363,25 +1366,34 @@ function renderTimetable(){
     const chips = document.createElement('div');
     chips.className='minute-chips';
 
-    let lineInserted = false;
     byHour[h].forEach(t=>{
       const ts = toSecs(t.h,t.m);
-      if(!lineInserted && nextBus && t.h===nextBus.h && t.m===nextBus.m){
-        lineInserted=true;
-        const line=document.createElement('div');
-        line.className='now-line';
-        line.innerHTML=`<div class="now-line-dot"></div><div class="now-line-bar"></div><div class="now-line-text">${p(nowH)}:${p(nowM)}</div>`;
+
+      // 現在時刻ラインを「次のバスの直前」に挿入
+      // ・まだ挿入していない
+      // ・このchipが次のバス、かつ現在時刻と同じ時間帯 or 現在時刻より後の最初の便
+      if(!nowLineInserted && nextBus && t.h===nextBus.h && t.m===nextBus.m){
+        nowLineInserted = true;
+        const line = document.createElement('div');
+        line.className = 'now-line';
+        line.innerHTML = `<div class="now-line-dot"></div><div class="now-line-bar"></div><div class="now-line-text">${p(nowH)}:${p(nowM)}</div>`;
         chips.appendChild(line);
       }
+
       const chip=document.createElement('div');
       chip.className='chip'+(ts<ns?' passed':'')+(nextBus&&t.h===nextBus.h&&t.m===nextBus.m?' next-bus':'');
       chip.textContent=p(t.m);
       if(t.s2){ const b=document.createElement('div'); b.className='c-badge2'; b.textContent='2'; chip.appendChild(b); }
       chips.appendChild(chip);
     });
+
+    // この時間ブロックに次のバスが含まれる場合のみ追加
+    // （空のhour-blockも含め全ブロック表示 → 現在時刻より前の時間帯は passed で表示）
     block.appendChild(chips);
     body.appendChild(block);
   });
+
+  // 全便が終了している場合（nextBusがない）はラインを末尾に追加しない
 
   document.getElementById('tt-time').textContent=`${p(nowH)}:${p(nowM)}`;
 }
