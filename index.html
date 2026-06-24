@@ -1108,11 +1108,11 @@ body {
       <div class="settings-card">
         <div class="setting-row">
           <div class="setting-label">バージョン</div>
-          <div style="font-size:15px;color:var(--text3)">Ver. 0.0.0</div>
+          <div style="font-size:15px;color:var(--text3)">Ver. 0.0.1</div>
         </div>
         <div class="setting-row">
           <div class="setting-label">ビルド</div>
-          <div style="font-size:15px;color:var(--text3)">2026-06-24</div>
+          <div style="font-size:15px;color:var(--text3)">2026-06-25</div>
         </div>
       </div>
     </div>
@@ -1174,14 +1174,14 @@ function getDayType(date) {
 function buildStops(route, dayType) {
   const schedule = route.schedules[dayType];
   return route.stops.map(stop => {
-    const times = schedule ? (schedule[stop.id] || []) : [];
+    const times = (schedule && Array.isArray(schedule[stop.id])) ? schedule[stop.id] : [];
     // timesを秒数でソート済みに（高速検索のため）
     const sorted = [...times].sort((a, b) => a.h * 60 + a.m - (b.h * 60 + b.m));
     return {
       name:     stop.name,
       dest:     stop.dest,
-      lat:      stop.lat,
-      lng:      stop.lng,
+      lat:      stop.lat  || 0,
+      lng:      stop.lng  || 0,
       walkSecs: stop.walkSecs || 0,
       times:    sorted,
     };
@@ -1766,9 +1766,8 @@ async function init() {
   const timetableOk = await loadTimetable();
 
   // 停留所名をヘッダーに反映（データ読み込み後）
-  if (STOPS.length && STOPS[currentStopIdx]) {
-    document.getElementById('sc-name').textContent = STOPS[currentStopIdx].name;
-  }
+  const initStopName = (STOPS.length && STOPS[currentStopIdx]) ? STOPS[currentStopIdx].name : '';
+  document.getElementById('sc-name').textContent = initStopName;
 
   updateManualBtns(currentStopIdx);
   renderCountdown();
@@ -1842,7 +1841,8 @@ function manualSelectStop(idx){
   const btns = document.querySelectorAll('.stop-btn');
   setStop(idx, btns[idx] || null);
   updateManualBtns(idx);
-  showToast(`${STOPS[idx].name} に切り替えました`);
+  const name = (STOPS.length && STOPS[idx]) ? STOPS[idx].name : `停留所${idx+1}`;
+  showToast(`${name} に切り替えました`);
 }
 
 function updateManualBtns(idx){
@@ -1870,6 +1870,11 @@ function detectNearestStop() {
     // ── 成功 ──
     pos => {
       showGpsLoading(false);
+      // STOPS未ロード時は手動選択へフォールバック
+      if (!STOPS.length) {
+        showGpsError('時刻表データが未ロードのため位置情報を使用できません', false);
+        return;
+      }
       const { latitude: lat, longitude: lng } = pos.coords;
 
       // Haversine距離（m）
