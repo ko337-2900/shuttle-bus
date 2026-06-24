@@ -1189,6 +1189,14 @@ function buildStops(route, dayType) {
 
 // timetable.json を fetch して STOPS を初期化する
 // 失敗時はフォールバック（空配列）で継続
+// タイムアウト付き fetch ラッパー
+function fetchWithTimeout(url, ms = 8000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  return fetch(url, { signal: controller.signal })
+    .finally(() => clearTimeout(timer));
+}
+
 async function loadTimetable() {
   // file:// プロトコルでは fetch が使えないため XMLHttpRequest にフォールバック
   const isFile = location.protocol === 'file:';
@@ -1197,22 +1205,29 @@ async function loadTimetable() {
     let data;
 
     if (isFile) {
-      // file:// 環境: XHR で同期的に読み込み
+      // file:// 環境: XHR でフォールバック
       console.warn('[Timetable] file:// 環境を検出。XHR でフォールバック。');
       data = await new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.open('GET', './timetable.json', true);
         xhr.responseType = 'json';
-        xhr.onload  = () => xhr.status === 200 || xhr.status === 0
-          ? resolve(xhr.response) : reject(new Error(`XHR ${xhr.status}`));
-        xhr.onerror = () => reject(new Error('XHR network error'));
+        xhr.timeout = 8000;
+        xhr.onload    = () => (xhr.status === 200 || xhr.status === 0)
+          ? resolve(xhr.response) : reject(new Error(`XHR HTTP ${xhr.status}`));
+        xhr.onerror   = () => reject(new Error('XHR: ネットワークエラー'));
+        xhr.ontimeout = () => reject(new Error('XHR: タイムアウト'));
         xhr.send();
       });
     } else {
-      // 通常環境: fetch を使用
-      const res = await fetch('./timetable.json');
+      // 通常環境: タイムアウト付き fetch
+      const res = await fetchWithTimeout('./timetable.json', 8000);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      data = await res.json();
+      data = await res.json(); // JSON パースエラーもここでキャッチ
+    }
+
+    // データ構造の検証
+    if (!data || !Array.isArray(data.routes) || !data.routes[0]) {
+      throw new Error('timetable.json の構造が不正です');
     }
 
     // 最初のルートを使用（将来: route IDで切替可能）
@@ -1224,9 +1239,15 @@ async function loadTimetable() {
     if (STOPS.every(s => s.times.length === 0)) {
       console.warn('[Timetable] No schedule for dayType:', dayType);
     }
+
+    return true; // 成功
   } catch (err) {
-    console.error('[Timetable] Failed to load timetable.json:', err);
+    const msg = err.name === 'AbortError'
+      ? 'タイムアウト（8秒）'
+      : err.message;
+    console.error('[Timetable] 読み込み失敗:', msg, err);
     STOPS = []; // フォールバック: 空データで継続
+    return false; // 失敗
   }
 }
 
@@ -1301,17 +1322,18 @@ function getUpcoming(idx, count){
 function b2tag(){ return `<span class="badge2">☆2</span>`; }
 
 // 人アイコン
+// 10分以内: 🚶、5分以内: 🏃、それ以外: 🚌
 function walkerEmoji(diffS, walkSecs){
-  if(!walkSecs) return '🚌';
-  return (diffS - walkSecs <= 60) ? '🏃' : '🚶';
+  if(diffS <= 300) return '🏃'; // 5分以内 → 走る
+  if(diffS <= 600) return '🚶'; // 10分以内 → 歩く
+  return '🚌';                   // それ以外 → バス
 }
 // 人のアニメーションクラス
+// ok=ゆっくりスウェイ、warn=上下バウンス（走る）、ng=震え
 function walkerClass(diffS, walkSecs){
-  if(!walkSecs) return 'ok';
-  const m = diffS - walkSecs;
-  if(m <= 0)  return 'ng';
-  if(m <= 60) return 'warn';
-  return 'ok';
+  if(diffS <= 300) return 'warn'; // 5分以内 → 走る
+  if(diffS <= 600) return 'ok';   // 10分以内 → 歩く
+  return 'ok';                     // それ以外 → バス（静止）
 }
 
 // 徒歩で間に合うかバッジを返す
@@ -1694,13 +1716,53 @@ function showView(v){
 /* ═══════════════════════════════════════════════════════
    INIT
 ═══════════════════════════════════════════════════════ */
+// ─────────────────────────────────────────────────────────
+// 起動時自己診断
+// 各機能の状態を確認し、異常があればユーザーに通知する
+// アプリ全体は継続動作させる
+// ─────────────────────────────────────────────────────────
+async function runDiagnostics(timetableOk) {
+  const results = [];
+
+  // 1. 時刻表データ
+  if (!timetableOk) {
+    results.push('時刻表データを取得できません');
+    console.error('[Diagnostics] timetable.json の読み込みに失敗しました');
+  }
+
+  // 2. Service Worker
+  if ('serviceWorker' in navigator) {
+    const reg = await navigator.serviceWorker.getRegistration();
+    if (!reg) {
+      results.push('オフライン機能が利用できません');
+      console.warn('[Diagnostics] Service Worker が未登録です');
+    }
+  }
+
+  // 3. GPS利用可否
+  if (!navigator.geolocation) {
+    results.push('位置情報が使用できません（現在地モードは利用不可）');
+    console.warn('[Diagnostics] Geolocation API が非対応です');
+  }
+
+  // 異常があればトーストで通知（アプリは継続）
+  if (results.length > 0) {
+    console.warn('[Diagnostics] 以下の問題が検出されました:', results);
+    results.forEach((msg, i) => {
+      setTimeout(() => showToast(`⚠️ ${msg}`), i * 3200);
+    });
+  } else {
+    console.info('[Diagnostics] すべての機能が正常です');
+  }
+}
+
 async function init() {
   // 設定UI適用
   applySettingsUI();
   applyStopModeUI(S.stopMode);
 
   // 時刻表データをJSONから非同期読み込み
-  await loadTimetable();
+  const timetableOk = await loadTimetable();
 
   // 停留所名をヘッダーに反映（データ読み込み後）
   if (STOPS.length && STOPS[currentStopIdx]) {
@@ -1715,6 +1777,9 @@ async function init() {
   if (S.stopMode === 'gps') {
     detectNearestStop();
   }
+
+  // 自己診断（非同期・バックグラウンドで実行）
+  runDiagnostics(timetableOk);
 
   // 毎秒更新タイマー
   setInterval(() => {
