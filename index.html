@@ -1488,7 +1488,7 @@ function renderCountdown(){
   const mins    = Math.floor(diffS / 60);
   const secs    = diffS % 60;
   const isUrgent = diffS < 60;
-  const maxWindow = 2400;
+  const maxWindow = 1200; // 20分固定
   const pct = Math.max(0, Math.min(100, (1 - diffS / maxWindow) * 100));
 
   // 次のバスが変わった or 初回 or 停留所が変わった → DOM構造ごと再構築
