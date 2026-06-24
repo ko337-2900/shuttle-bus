@@ -880,6 +880,34 @@ body {
 .walk-ok   { background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.9); }
 .walk-warn { background: rgba(240,165,0,0.35);   color: #ffd080; }
 .walk-ng   { background: rgba(200,50,50,0.35);   color: #ff9090; }
+
+/* プログレスバー上の人アニメーション */
+.cd-progress-wrap { position: relative; }
+.walker {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 16px;
+  line-height: 1;
+  pointer-events: none;
+  transition: left 1s linear;
+}
+@keyframes walk-sway {
+  0%,100% { transform: translateY(-50%) rotate(-4deg); }
+  50%      { transform: translateY(-50%) rotate(4deg); }
+}
+@keyframes run-bounce {
+  0%,100% { transform: translateY(-65%); }
+  50%      { transform: translateY(-35%); }
+}
+@keyframes panic-shake {
+  0%,100% { transform: translateY(-50%) rotate(0deg); }
+  25%      { transform: translateY(-50%) rotate(-10deg); }
+  75%      { transform: translateY(-50%) rotate(10deg); }
+}
+.walker.ok   { animation: walk-sway   0.8s  ease-in-out infinite; }
+.walker.warn { animation: run-bounce  0.35s ease-in-out infinite; }
+.walker.ng   { animation: panic-shake 0.2s  ease-in-out infinite; }
 </style>
 </head>
 <body>
@@ -1271,6 +1299,20 @@ function getUpcoming(idx, count){
 
 function b2tag(){ return `<span class="badge2">☆2</span>`; }
 
+// 人アイコン
+function walkerEmoji(diffS, walkSecs){
+  if(!walkSecs) return '🚌';
+  return (diffS - walkSecs <= 60) ? '🏃' : '🚶';
+}
+// 人のアニメーションクラス
+function walkerClass(diffS, walkSecs){
+  if(!walkSecs) return 'ok';
+  const m = diffS - walkSecs;
+  if(m <= 0)  return 'ng';
+  if(m <= 60) return 'warn';
+  return 'ok';
+}
+
 // 徒歩で間に合うかバッジを返す
 // diffS: 発車まで残り秒、walkSecs: 乗り場までの徒歩秒数
 function walkBadge(diffS, walkSecs){
@@ -1447,6 +1489,7 @@ function renderCountdown(){
       <div class="cd-secs" id="cd-secs">${p(secs)} 秒</div>
       <div class="cd-progress-wrap">
         <div class="cd-progress-bar" id="cd-bar" style="width:${pct}%"></div>
+        <div class="walker ${walkerClass(diffS, stop.walkSecs)}" id="cd-walker" style="left:${Math.max(0,pct-3)}%">${walkerEmoji(diffS, stop.walkSecs)}</div>
       </div>
       <div class="cd-depart">
         <div>
@@ -1473,6 +1516,13 @@ function renderCountdown(){
   if(minsEl) minsEl.textContent = mins;
   if(secsEl) secsEl.textContent = `${p(secs)} 秒`;
   if(barEl)  barEl.style.width  = pct + '%';
+  const walkerEl = document.getElementById('cd-walker');
+  if(walkerEl && STOPS[currentStopIdx]){
+    const wStop = STOPS[currentStopIdx];
+    walkerEl.style.left    = Math.max(0, pct - 3) + '%';
+    walkerEl.textContent   = walkerEmoji(diffS, wStop.walkSecs);
+    walkerEl.className     = 'walker ' + walkerClass(diffS, wStop.walkSecs);
+  }
   if(ubEl){
     if(isUrgent) ubEl.classList.add('show'); else ubEl.classList.remove('show');
   }
