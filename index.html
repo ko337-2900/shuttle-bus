@@ -1114,6 +1114,10 @@ body {
           <div class="setting-label">ビルド</div>
           <div style="font-size:15px;color:var(--text3)">2026-06-25</div>
         </div>
+        <div class="setting-row">
+          <div class="setting-label">時刻表作成</div>
+          <div style="font-size:15px;color:var(--text3)" id="timetable-date">-</div>
+        </div>
       </div>
     </div>
 
@@ -1240,6 +1244,10 @@ async function loadTimetable() {
     if (STOPS.every(s => s.times.length === 0)) {
       console.warn('[Timetable] No schedule for dayType:', dayType);
     }
+
+    // 時刻表の更新日をアプリ情報に反映
+    const dateEl = document.getElementById('timetable-date');
+    if (dateEl && data._updated) dateEl.textContent = data._updated;
 
     return true; // 成功
   } catch (err) {
