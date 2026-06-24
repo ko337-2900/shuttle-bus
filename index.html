@@ -868,6 +868,18 @@ body {
   font-weight: 600;
   cursor: pointer;
 }
+/* 徒歩バッジ */
+.walk-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 5px;
+  padding: 2px 6px;
+  margin-top: 4px;
+}
+.walk-ok   { background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.9); }
+.walk-warn { background: rgba(240,165,0,0.35);   color: #ffd080; }
+.walk-ng   { background: rgba(200,50,50,0.35);   color: #ff9090; }
 </style>
 </head>
 <body>
@@ -1136,11 +1148,12 @@ function buildStops(route, dayType) {
     // timesを秒数でソート済みに（高速検索のため）
     const sorted = [...times].sort((a, b) => a.h * 60 + a.m - (b.h * 60 + b.m));
     return {
-      name:  stop.name,
-      dest:  stop.dest,
-      lat:   stop.lat,
-      lng:   stop.lng,
-      times: sorted,
+      name:     stop.name,
+      dest:     stop.dest,
+      lat:      stop.lat,
+      lng:      stop.lng,
+      walkSecs: stop.walkSecs || 0,
+      times:    sorted,
     };
   });
 }
@@ -1148,10 +1161,30 @@ function buildStops(route, dayType) {
 // timetable.json を fetch して STOPS を初期化する
 // 失敗時はフォールバック（空配列）で継続
 async function loadTimetable() {
+  // file:// プロトコルでは fetch が使えないため XMLHttpRequest にフォールバック
+  const isFile = location.protocol === 'file:';
+
   try {
-    const res = await fetch('./timetable.json');
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
+    let data;
+
+    if (isFile) {
+      // file:// 環境: XHR で同期的に読み込み
+      console.warn('[Timetable] file:// 環境を検出。XHR でフォールバック。');
+      data = await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', './timetable.json', true);
+        xhr.responseType = 'json';
+        xhr.onload  = () => xhr.status === 200 || xhr.status === 0
+          ? resolve(xhr.response) : reject(new Error(`XHR ${xhr.status}`));
+        xhr.onerror = () => reject(new Error('XHR network error'));
+        xhr.send();
+      });
+    } else {
+      // 通常環境: fetch を使用
+      const res = await fetch('./timetable.json');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      data = await res.json();
+    }
 
     // 最初のルートを使用（将来: route IDで切替可能）
     const route   = data.routes[0];
@@ -1172,17 +1205,39 @@ async function loadTimetable() {
    HOLIDAYS (将来は SPECIAL_CLOSURES に追記するだけ)
 ═══════════════════════════════════════════════════════ */
 const HOLIDAYS = new Set([
+  // 2026年
   '2026-01-01','2026-01-12','2026-02-11','2026-02-23',
   '2026-03-20','2026-04-29','2026-05-03','2026-05-04',
   '2026-05-05','2026-05-06','2026-07-20','2026-08-11',
   '2026-09-21','2026-09-22','2026-09-23','2026-10-12',
   '2026-11-03','2026-11-23','2026-12-23',
-  // 2027年分は随時追加
+  // 2027年
+  '2027-01-01','2027-01-11','2027-02-11','2027-02-23',
+  '2027-03-21','2027-04-29','2027-05-03','2027-05-04',
+  '2027-05-05','2027-07-19','2027-08-11',
+  '2027-09-20','2027-09-23','2027-10-11',
+  '2027-11-03','2027-11-23',
+  // 2028年
+  '2028-01-01','2028-01-10','2028-02-11','2028-02-23',
+  '2028-03-20','2028-04-29','2028-05-03','2028-05-04',
+  '2028-05-05','2028-07-17','2028-08-11',
+  '2028-09-18','2028-09-22','2028-10-09',
+  '2028-11-03','2028-11-23',
 ]);
 
+// 夏季休暇・年末年始など特別休業日
+// ※ 毎年ここに追加する
 const SPECIAL_CLOSURES = new Set([
-  // 夏季: '2026-08-13','2026-08-14','2026-08-15',
-  // 年末年始: '2026-12-29','2026-12-30','2026-12-31','2027-01-02','2027-01-03',
+  // 2026年 夏季休暇（3日間）※実際の日程に合わせて変更
+  '2026-08-13','2026-08-14','2026-08-15',
+  // 2026年 年末年始
+  '2026-12-29','2026-12-30','2026-12-31',
+  '2027-01-02','2027-01-03',
+  // 2027年 夏季休暇（仮）
+  '2027-08-13','2027-08-14','2027-08-15',
+  // 2027年 年末年始
+  '2027-12-29','2027-12-30','2027-12-31',
+  '2028-01-02','2028-01-03',
 ]);
 
 const DOW = ['日','月','火','水','木','金','土'];
@@ -1195,7 +1250,7 @@ function isOperatingDay(d){
 }
 function nextOperatingDay(from){
   const d = new Date(from); d.setDate(d.getDate()+1);
-  for(let i=0;i<14;i++){ if(isOperatingDay(d)) return new Date(d); d.setDate(d.getDate()+1); }
+  for(let i=0;i<30;i++){ if(isOperatingDay(d)) return new Date(d); d.setDate(d.getDate()+1); }
   return null;
 }
 
@@ -1215,6 +1270,16 @@ function getUpcoming(idx, count){
 }
 
 function b2tag(){ return `<span class="badge2">☆2</span>`; }
+
+// 徒歩で間に合うかバッジを返す
+// diffS: 発車まで残り秒、walkSecs: 乗り場までの徒歩秒数
+function walkBadge(diffS, walkSecs){
+  if(walkSecs === 0) return ''; // 駅など徒歩不要
+  const margin = diffS - walkSecs;
+  if(margin <= 0)  return '<span class="walk-badge walk-ng">間に合わない</span>';
+  if(margin <= 60) return '<span class="walk-badge walk-warn">急げば間に合う</span>';
+  return '<span class="walk-badge walk-ok">徒歩で間に合う</span>';
+}
 
 /* ═══════════════════════════════════════════════════════
    SETTINGS / STORAGE
@@ -1388,7 +1453,10 @@ function renderCountdown(){
           <div class="cd-depart-time">${p(next.h)}:${p(next.m)} ${b2}</div>
           <div style="font-size:11px;color:rgba(255,255,255,0.55);margin-top:2px">${stop.name} 発</div>
         </div>
-        <div class="cd-depart-meta">${stop.dest}</div>
+        <div class="cd-depart-meta">
+          ${stop.dest}
+          ${walkBadge(diffS, stop.walkSecs)}
+        </div>
       </div>`;
 
     // その後の便も初回構築
