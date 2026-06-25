@@ -922,12 +922,15 @@ body {
 }
 
 .view-panel {
-  width: 100vw;        /* 画面幅に固定 */
-  max-width: 430px;    /* mainのmax-widthに合わせる */
+  width: 100vw;
+  max-width: 430px;
   flex-shrink: 0;
   min-width: 0;
-  padding: 16px 14px;  /* mainのpaddingをここへ移動 */
+  padding: 16px 14px;
   box-sizing: border-box;
+  height: calc(100vh - 120px); /* タブバー・ヘッダー分を引く */
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* transition クラスをJSで付け外しして慣性スナップ */
@@ -1780,6 +1783,10 @@ function showView(v, direction) {
     document.getElementById('tab-' + id).classList.toggle('active', id === v);
   });
 
+  // timetableから離れる時は次のパネルをトップへ
+  const nextPanel = document.getElementById('view-' + v);
+  if (nextPanel) nextPanel.scrollTop = 0;
+
   _currentTabIdx = newIdx;
   slideTo(newIdx, true);
 
@@ -1847,8 +1854,23 @@ async function runDiagnostics(timetableOk) {
   let startX = 0, startY = 0;
 
   document.addEventListener('touchstart', e => {
-    startX = e.touches[0].clientX;
-    startY = e.touches[0].clientY;
+    startX     = e.touches[0].clientX;
+    startY     = e.touches[0].clientY;
+    isDragging = false;
+    const c = document.getElementById('slide-container');
+    if (c) c.classList.remove('animate');
+  }, { passive: true });
+
+  document.addEventListener('touchmove', e => {
+    const dx = e.touches[0].clientX - startX;
+    const dy = e.touches[0].clientY - startY;
+    if (!isDragging && Math.abs(dy) > Math.abs(dx)) return;
+    isDragging = true;
+    const atStart = _currentTabIdx === 0 && dx > 0;
+    const atEnd   = _currentTabIdx === TABS.length - 1 && dx < 0;
+    const resistance = (atStart || atEnd) ? 0.25 : 1;
+    const c = document.getElementById('slide-container');
+    if (c) c.style.transform = `translateX(calc(${-_currentTabIdx * 100}vw + ${dx * resistance}px))`;
   }, { passive: true });
 
   document.addEventListener('touchend', e => {
