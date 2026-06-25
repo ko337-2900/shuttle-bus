@@ -48,30 +48,30 @@
 }
 
 [data-theme="dark"] {
-  --bg:           #111;
+  --bg:           #0e0e0e;
   --bg2:          #1a1a1a;
-  --glass-bg:     rgba(40,40,40,0.70);
-  --glass-border: rgba(255,255,255,0.10);
-  --glass-shadow: 0 8px 32px rgba(0,0,0,0.50), 0 1px 0 rgba(255,255,255,0.06) inset;
-  --glass-card:   rgba(30,30,30,0.60);
-  --text:         #efefef;
-  --text2:        #aaa;
-  --text3:        #666;
-  --green:        #ddd;
-  --green2:       #bbb;
-  --green3:       #888;
+  --glass-bg:     rgba(38,38,38,0.80);
+  --glass-border: rgba(255,255,255,0.12);
+  --glass-shadow: 0 8px 32px rgba(0,0,0,0.55), 0 1px 0 rgba(255,255,255,0.07) inset;
+  --glass-card:   rgba(28,28,28,0.65);
+  --text:         #f0f0f0;   /* 明るめに */
+  --text2:        #c0c0c0;   /* 少し明るく */
+  --text3:        #888;      /* サブテキスト */
+  --green:        #e8e8e8;
+  --green2:       #c8c8c8;
+  --green3:       #999;
   --accent:       #fff;
-  --tab-bg:       rgba(25,25,25,0.85);
-  --tab-active:   rgba(60,60,60,0.95);
-  --chip-bg:      rgba(50,50,50,0.75);
-  --chip-border:  rgba(255,255,255,0.10);
-  --chip-passed:  rgba(255,255,255,0.10);
-  --now-line:     #ccc;
-  --badge2-bg:    rgba(255,255,255,0.12);
-  --badge2-text:  #ccc;
-  --overlay-blur: blur(24px) saturate(1.1);
-  --header-bg:    linear-gradient(160deg, #000 0%, #1a1a1a 100%);
-  --warn-bg:      rgba(30,30,30,0.65);
+  --tab-bg:       rgba(18,18,18,0.92);
+  --tab-active:   rgba(55,55,55,0.98);
+  --chip-bg:      rgba(48,48,48,0.80);
+  --chip-border:  rgba(255,255,255,0.13);
+  --chip-passed:  rgba(255,255,255,0.12);
+  --now-line:     #e0e0e0;   /* より見やすく */
+  --badge2-bg:    rgba(255,255,255,0.14);
+  --badge2-text:  #e0e0e0;
+  --overlay-blur: blur(24px) saturate(1.15);
+  --header-bg:    linear-gradient(160deg, #080808 0%, #181818 100%);
+  --warn-bg:      rgba(28,28,28,0.75);
 }
 
 /* ─────────────────────────────────────────
@@ -200,9 +200,9 @@ body {
 
 .tab {
   flex: 1;
-  padding: 10px 8px 9px;
+  padding: 8px 4px 6px;
   text-align: center;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 500;
   color: var(--text3);
   cursor: pointer;
@@ -210,13 +210,21 @@ body {
   background: transparent;
   border-bottom: 2px solid transparent;
   transition: color 0.18s, border-color 0.18s;
-  letter-spacing: 0.01em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
 }
-
+.tab svg {
+  width: 22px; height: 22px;
+  stroke: currentColor;
+  transition: stroke 0.18s;
+}
+.tab span { line-height: 1; }
 .tab.active {
   color: var(--accent);
   border-bottom-color: var(--accent);
-  font-weight: 600;
+  font-weight: 700;
 }
 
 /* ─────────────────────────────────────────
@@ -342,31 +350,30 @@ body {
 }
 
 .cd-mins-num {
-  font-size: 80px;
+  font-size: 64px;
   font-weight: 900;
-  letter-spacing: -4px;
+  letter-spacing: -3px;
   line-height: 1;
   font-variant-numeric: tabular-nums;
-  /* smooth digit morph */
   transition: opacity 0.15s;
 }
 
 .cd-mins-unit {
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 600;
   color: rgba(255,255,255,0.7);
   margin-left: 4px;
   align-self: flex-end;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .cd-secs {
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 600;
   color: rgba(255,255,255,0.45);
   font-variant-numeric: tabular-nums;
-  margin-bottom: 14px;
-  height: 28px; /* reserve space to avoid layout jump */
+  margin-bottom: 12px;
+  height: 24px;
 }
 
 /* progress bar */
@@ -937,6 +944,27 @@ body {
 .slide-container.animate {
   transition: transform 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
+/* スワイプインジケーター */
+.swipe-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  padding: 5px 0 3px;
+  background: var(--tab-bg);
+  backdrop-filter: var(--overlay-blur);
+  -webkit-backdrop-filter: var(--overlay-blur);
+}
+.swipe-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--chip-border);
+  transition: all 0.25s;
+}
+.swipe-dot.active {
+  width: 18px;
+  border-radius: 3px;
+  background: var(--accent);
+}
 </style>
 </head>
 <body>
@@ -964,10 +992,26 @@ body {
 
 <!-- ── TABS ── -->
 <nav class="tab-bar">
-  <button class="tab active" id="tab-next"      onclick="showView('next')">次のバス</button>
-  <button class="tab"        id="tab-timetable" onclick="showView('timetable')">時刻表</button>
-  <button class="tab"        id="tab-settings"  onclick="showView('settings')">設定</button>
+  <button class="tab active" id="tab-next" onclick="showView('next')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+    <span>次のバス</span>
+  </button>
+  <button class="tab" id="tab-timetable" onclick="showView('timetable')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="14" x2="8" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="16" y1="14" x2="16" y2="14"/></svg>
+    <span>時刻表</span>
+  </button>
+  <button class="tab" id="tab-settings" onclick="showView('settings')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    <span>設定</span>
+  </button>
 </nav>
+
+<!-- スワイプインジケーター -->
+<div class="swipe-dots" id="swipe-dots">
+  <div class="swipe-dot active" id="dot-0"></div>
+  <div class="swipe-dot" id="dot-1"></div>
+  <div class="swipe-dot" id="dot-2"></div>
+</div>
 
 <div class="main">
 
@@ -1789,6 +1833,11 @@ function showView(v, direction) {
 
   _currentTabIdx = newIdx;
   slideTo(newIdx, true);
+  // ドットインジケーター更新
+  TABS.forEach((_,i) => {
+    const dot = document.getElementById('dot-' + i);
+    if(dot) dot.classList.toggle('active', i === newIdx);
+  });
 
   if (v === 'timetable') {
     timetableStopIdx = currentStopIdx;
