@@ -1923,22 +1923,35 @@ async function runDiagnostics(timetableOk) {
   }, { passive: true });
 
   document.addEventListener('touchend', e => {
+    // ドラッグしていなければ何もしない
+    if (!isDragging) return;
+    isDragging = false;
+
     const dx = e.changedTouches[0].clientX - startX;
     const dy = e.changedTouches[0].clientY - startY;
 
-    // 縦スクロールは無視
-    if (Math.abs(dy) > MAX_VERT) return;
-    if (Math.abs(dx) < MIN_DIST) return;
+    // 縦スクロールの場合は元の位置に戻す
+    if (Math.abs(dy) > MAX_VERT) {
+      slideTo(_currentTabIdx, true);
+      return;
+    }
 
-    // 現在のタブインデックスを取得
-    const current = _currentTabIdx;
+    // MIN_DIST 未満は元の位置に戻す（ズレたまま止まるのを防ぐ）
+    if (Math.abs(dx) < MIN_DIST) {
+      slideTo(_currentTabIdx, true);
+      return;
+    }
 
     const dir  = dx < 0 ? 'left' : 'right';
     const next = dx < 0
-      ? Math.min(current + 1, TABS.length - 1)  // 左スワイプ → 次
-      : Math.max(current - 1, 0);                // 右スワイプ → 前
+      ? Math.min(_currentTabIdx + 1, TABS.length - 1)
+      : Math.max(_currentTabIdx - 1, 0);
 
-    if (next !== current) showView(TABS[next], dir);
+    if (next !== _currentTabIdx) {
+      showView(TABS[next], dir);
+    } else {
+      slideTo(_currentTabIdx, true); // 端のパネルは元に戻す
+    }
   }, { passive: true });
 })();
 
