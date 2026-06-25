@@ -957,7 +957,7 @@ body {
       ※土・日・祝、夏季休暇（3日間）並びに年末年始は休運となります。<br>
       ※☆印は2号車。道路状況により定時運行できない場合があります。
     </div>
-    <div class="copyright">© 2026 ooisan</div>
+    <div class="copyright" data-app="copyright">© 2026 ooisan</div>
   </div>
 
   <!-- ══════════════════════════════════════
@@ -976,7 +976,7 @@ body {
       ※☆印は2号車。道路状況により定時運行できない場合があります。<br>
       ※武蔵小金井駅前では長時間の停車ができないため、出発時刻前に到着したバスは一旦回送を行う場合があります。
     </div>
-    <div class="copyright">© 2026 ooisan</div>
+    <div class="copyright" data-app="copyright">© 2026 ooisan</div>
   </div>
 
   <!-- ══════════════════════════════════════
@@ -1108,11 +1108,11 @@ body {
       <div class="settings-card">
         <div class="setting-row">
           <div class="setting-label">バージョン</div>
-          <div style="font-size:15px;color:var(--text3)">Ver. 0.0.1</div>
+          <div style="font-size:15px;color:var(--text3)" data-app="version">-</div>
         </div>
         <div class="setting-row">
           <div class="setting-label">ビルド</div>
-          <div style="font-size:15px;color:var(--text3)">2026-06-25</div>
+          <div style="font-size:15px;color:var(--text3)" data-app="build_date">-</div>
         </div>
         <div class="setting-row">
           <div class="setting-label">時刻表データ</div>
@@ -1124,7 +1124,7 @@ body {
     <div class="notice">
       ※設定は端末に保存されます（再起動後も維持）。
     </div>
-    <div class="copyright">© 2026 ooisan</div>
+    <div class="copyright" data-app="copyright">© 2026 ooisan</div>
   </div>
 
 </div><!-- /main -->
@@ -1194,6 +1194,28 @@ function buildStops(route, dayType) {
 
 // timetable.json を fetch して STOPS を初期化する
 // 失敗時はフォールバック（空配列）で継続
+// app.json を読み込んでアプリ情報UIを更新する
+async function loadAppInfo() {
+  try {
+    const res = await fetchWithTimeout('./app.json', 5000);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    // 設定画面のアプリ情報を更新
+    const verEl   = document.querySelector('[data-app="version"]');
+    const buildEl = document.querySelector('[data-app="build_date"]');
+    const cpEl    = document.querySelector('[data-app="copyright"]');
+
+    if (verEl   && data.version)    verEl.textContent   = data.version;
+    if (buildEl && data.build_date) buildEl.textContent = data.build_date;
+    if (cpEl    && data.copyright)  cpEl.textContent    = data.copyright;
+
+  } catch (err) {
+    console.error('[AppInfo] app.json の読み込み失敗:', err);
+    // 失敗してもアプリは継続動作
+  }
+}
+
 // タイムアウト付き fetch ラッパー
 function fetchWithTimeout(url, ms = 8000) {
   const controller = new AbortController();
@@ -1788,6 +1810,9 @@ async function init() {
   if (S.stopMode === 'gps') {
     detectNearestStop();
   }
+
+  // アプリ情報を app.json から読み込み
+  loadAppInfo();
 
   // 自己診断（非同期・バックグラウンドで実行）
   runDiagnostics(timetableOk);
