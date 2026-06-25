@@ -1115,7 +1115,7 @@ body {
           <div style="font-size:15px;color:var(--text3)">2026-06-25</div>
         </div>
         <div class="setting-row">
-          <div class="setting-label">時刻表作成</div>
+          <div class="setting-label">時刻表データ</div>
           <div style="font-size:15px;color:var(--text3)" id="timetable-date">-</div>
         </div>
       </div>
@@ -1245,6 +1245,14 @@ async function loadTimetable() {
       console.warn('[Timetable] No schedule for dayType:', dayType);
     }
 
+    // 祝日・特別休業日を JSON からセット（HTML側に直書き不要）
+    if (Array.isArray(data.holidays)) {
+      HOLIDAYS = new Set(data.holidays);
+    }
+    if (Array.isArray(data.special_closures)) {
+      SPECIAL_CLOSURES = new Set(data.special_closures);
+    }
+
     // 時刻表の更新日をアプリ情報に反映
     const dateEl = document.getElementById('timetable-date');
     if (dateEl && data._updated) dateEl.textContent = data._updated;
@@ -1263,41 +1271,10 @@ async function loadTimetable() {
 /* ═══════════════════════════════════════════════════════
    HOLIDAYS (将来は SPECIAL_CLOSURES に追記するだけ)
 ═══════════════════════════════════════════════════════ */
-const HOLIDAYS = new Set([
-  // 2026年
-  '2026-01-01','2026-01-12','2026-02-11','2026-02-23',
-  '2026-03-20','2026-04-29','2026-05-03','2026-05-04',
-  '2026-05-05','2026-05-06','2026-07-20','2026-08-11',
-  '2026-09-21','2026-09-22','2026-09-23','2026-10-12',
-  '2026-11-03','2026-11-23','2026-12-23',
-  // 2027年
-  '2027-01-01','2027-01-11','2027-02-11','2027-02-23',
-  '2027-03-21','2027-04-29','2027-05-03','2027-05-04',
-  '2027-05-05','2027-07-19','2027-08-11',
-  '2027-09-20','2027-09-23','2027-10-11',
-  '2027-11-03','2027-11-23',
-  // 2028年
-  '2028-01-01','2028-01-10','2028-02-11','2028-02-23',
-  '2028-03-20','2028-04-29','2028-05-03','2028-05-04',
-  '2028-05-05','2028-07-17','2028-08-11',
-  '2028-09-18','2028-09-22','2028-10-09',
-  '2028-11-03','2028-11-23',
-]);
-
-// 夏季休暇・年末年始など特別休業日
-// ※ 毎年ここに追加する
-const SPECIAL_CLOSURES = new Set([
-  // 2026年 夏季休暇（3日間）※実際の日程に合わせて変更
-  '2026-08-13','2026-08-14','2026-08-15',
-  // 2026年 年末年始
-  '2026-12-29','2026-12-30','2026-12-31',
-  '2027-01-02','2027-01-03',
-  // 2027年 夏季休暇（仮）
-  '2027-08-13','2027-08-14','2027-08-15',
-  // 2027年 年末年始
-  '2027-12-29','2027-12-30','2027-12-31',
-  '2028-01-02','2028-01-03',
-]);
+// 祝日・特別休業日は timetable.json から読み込む
+// loadTimetable() 実行後に上書きされる
+let HOLIDAYS       = new Set();
+let SPECIAL_CLOSURES = new Set();
 
 const DOW = ['日','月','火','水','木','金','土'];
 
@@ -1431,10 +1408,27 @@ let _prevNextKey = ''; // 次のバスが変わったかを検知するキー
 let _prevStopIdx = -1;
 let _prevMode    = ''; // 'normal' | 'closed' | 'holiday'
 
+// DOM要素キャッシュ（毎秒getElementById を避けるため初期化時に取得）
+const DOM = {
+  card: null, upcomingLabel: null, upcomingList: null,
+  cdMins: null, cdSecs: null, cdBar: null, cdWalker: null, cdUb: null,
+  ttBody: null, ttTime: null, scName: null, toast: null,
+};
+
+function populateDomCache() {
+  DOM.card          = document.getElementById('countdown-card');
+  DOM.upcomingLabel = document.getElementById('upcoming-label');
+  DOM.upcomingList  = document.getElementById('upcoming-list');
+  DOM.ttBody        = document.getElementById('timetable-body');
+  DOM.ttTime        = document.getElementById('tt-time');
+  DOM.scName        = document.getElementById('sc-name');
+  DOM.toast         = document.getElementById('toast');
+}
+
 function renderCountdown(){
-  const card  = document.getElementById('countdown-card');
-  const label = document.getElementById('upcoming-label');
-  const list  = document.getElementById('upcoming-list');
+  const card  = DOM.card;
+  const label = DOM.upcomingLabel;
+  const list  = DOM.upcomingList;
   const now   = new Date();
 
   // ── データなし ──
@@ -1534,21 +1528,27 @@ function renderCountdown(){
         </div>
       </div>`;
 
+    // カード内要素をキャッシュ更新
+    DOM.cdMins = document.getElementById('cd-mins');
+    DOM.cdSecs = document.getElementById('cd-secs');
+    DOM.cdBar  = document.getElementById('cd-bar');
+    DOM.cdWalker = document.getElementById('cd-walker');
+    DOM.cdUb   = document.getElementById('cd-ub');
     // その後の便も初回構築
     renderUpcoming(upcoming, true);
     return;
   }
 
   // 毎秒: 数値ノードだけ直接書き換え（チカチカなし）
-  const minsEl = document.getElementById('cd-mins');
-  const secsEl = document.getElementById('cd-secs');
-  const barEl  = document.getElementById('cd-bar');
-  const ubEl   = document.getElementById('cd-ub');
+  const minsEl = DOM.cdMins   || document.getElementById('cd-mins');
+  const secsEl = DOM.cdSecs   || document.getElementById('cd-secs');
+  const barEl  = DOM.cdBar    || document.getElementById('cd-bar');
+  const ubEl   = DOM.cdUb     || document.getElementById('cd-ub');
 
   if(minsEl) minsEl.textContent = mins;
   if(secsEl) secsEl.textContent = `${p(secs)} 秒`;
   if(barEl)  barEl.style.width  = pct + '%';
-  const walkerEl = document.getElementById('cd-walker');
+  const walkerEl = DOM.cdWalker || document.getElementById('cd-walker');
   if(walkerEl && STOPS[currentStopIdx]){
     const wStop = STOPS[currentStopIdx];
     walkerEl.style.right   = Math.max(0, pct - 3) + '%';
@@ -1621,7 +1621,7 @@ function renderTimetable(){
   }
 
   const stop = STOPS[timetableStopIdx];
-  const body = document.getElementById('timetable-body');
+  const body = DOM.ttBody;
 
   const byHour = {};
   stop.times.forEach(t=>{
@@ -1672,7 +1672,7 @@ function renderTimetable(){
 
   // 全便が終了している場合（nextBusがない）はラインを末尾に追加しない
 
-  document.getElementById('tt-time').textContent=`${p(nowH)}:${p(nowM)}`;
+  if(DOM.ttTime) DOM.ttTime.textContent=`${p(nowH)}:${p(nowM)}`;
 }
 
 function scrollToNowLine(){
@@ -1766,6 +1766,9 @@ async function runDiagnostics(timetableOk) {
 }
 
 async function init() {
+  // DOM要素キャッシュを初期化
+  populateDomCache();
+
   // 設定UI適用
   applySettingsUI();
   applyStopModeUI(S.stopMode);
@@ -1775,7 +1778,7 @@ async function init() {
 
   // 停留所名をヘッダーに反映（データ読み込み後）
   const initStopName = (STOPS.length && STOPS[currentStopIdx]) ? STOPS[currentStopIdx].name : '';
-  document.getElementById('sc-name').textContent = initStopName;
+  if(DOM.scName) DOM.scName.textContent = initStopName;
 
   updateManualBtns(currentStopIdx);
   renderCountdown();
@@ -2024,7 +2027,7 @@ function fallbackCopy(url){
 
 let _toastTimer;
 function showToast(msg){
-  const t = document.getElementById('toast');
+  const t = DOM.toast || document.getElementById('toast');
   t.textContent = msg;
   t.classList.add('show');
   clearTimeout(_toastTimer);
