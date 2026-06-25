@@ -473,7 +473,7 @@ body {
 /* ─────────────────────────────────────────
    TIMETABLE VIEW
 ───────────────────────────────────────── */
-#view-timetable { display:none; }
+#view-timetable { /* display managed by slide-container */ }
 
 /* iOS Segmented Control */
 .stop-selector {
@@ -582,7 +582,7 @@ body {
 /* ─────────────────────────────────────────
    SETTINGS VIEW – iOS Settings.app style
 ───────────────────────────────────────── */
-#view-settings { display:none; }
+#view-settings { /* display managed by slide-container */ }
 
 .settings-section { margin-bottom: 28px; }
 
@@ -910,6 +910,29 @@ body {
 .walker.ok   { animation: walk-sway   0.8s  ease-in-out infinite; }
 .walker.warn { animation: run-bounce  0.35s ease-in-out infinite; }
 .walker.ng   { animation: panic-shake 0.2s  ease-in-out infinite; }
+/* ─── タブ切替スライドアニメーション（指追従） ─── */
+.main {
+  overflow: hidden;
+  position: relative;
+}
+
+/* スライドコンテナ: 全パネルを横並びに配置 */
+.slide-container {
+  display: flex;
+  width: 300%;          /* パネル3枚分 */
+  will-change: transform;
+}
+
+.view-panel {
+  width: calc(100% / 3);
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+/* transition クラスをJSで付け外しして慣性スナップ */
+.slide-container.animate {
+  transition: transform 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
 </style>
 </head>
 <body>
@@ -947,7 +970,8 @@ body {
   <!-- ══════════════════════════════════════
        NEXT BUS VIEW
   ══════════════════════════════════════ -->
-  <div id="view-next">
+  <div class="slide-container" id="slide-container">
+  <div id="view-next" class="view-panel">
     <div class="glass countdown-card" id="countdown-card"></div>
 
     <p class="section-label" id="upcoming-label">その後の便</p>
@@ -963,7 +987,7 @@ body {
   <!-- ══════════════════════════════════════
        TIMETABLE VIEW
   ══════════════════════════════════════ -->
-  <div id="view-timetable">
+  <div id="view-timetable" class="view-panel">
     <div class="stop-selector">
       <button class="stop-btn active" onclick="setTimetableStop(0,this)">C棟</button>
       <button class="stop-btn"        onclick="setTimetableStop(1,this)">シャトルバスステーション</button>
@@ -982,7 +1006,7 @@ body {
   <!-- ══════════════════════════════════════
        SETTINGS VIEW
   ══════════════════════════════════════ -->
-  <div id="view-settings">
+  <div id="view-settings" class="view-panel">
 
     <!-- 乗車場所の決め方 -->
     <div class="settings-section">
@@ -1126,6 +1150,7 @@ body {
     </div>
     <div class="copyright" data-app="copyright">© 2026 ooisan</div>
   </div>
+  </div><!-- /slide-container -->
 
 </div><!-- /main -->
 
@@ -1728,19 +1753,42 @@ function setStop(idx, btn, auto=false){
   renderTimetable();
 }
 
-function showView(v){
-  ['next','timetable','settings'].forEach(id=>{
-    document.getElementById('view-'+id).style.display = v===id?'block':'none';
-    document.getElementById('tab-'+id).classList.toggle('active', v===id);
+const TABS = ['next', 'timetable', 'settings'];
+let _currentTabIdx = 0;
+
+// スライドコンテナをインデックスに合わせて移動（指追従 or スナップ）
+function slideTo(idx, animate) {
+  const container = document.getElementById('slide-container');
+  if (!container) return;
+  if (animate) {
+    container.classList.add('animate');
+    setTimeout(() => container.classList.remove('animate'), 330);
+  } else {
+    container.classList.remove('animate');
+  }
+  // 各パネルはコンテナ幅の1/3ずつ → idx * (100/3)% ずらす
+  container.style.transform = `translateX(${-idx * (100 / 3)}%)`;
+}
+
+function showView(v, direction) {
+  const newIdx = TABS.indexOf(v);
+  if (newIdx === _currentTabIdx && direction === undefined) return;
+
+  // タブのアクティブ状態を更新
+  TABS.forEach(id => {
+    document.getElementById('tab-' + id).classList.toggle('active', id === v);
   });
-  if(v==='timetable'){
-    // 時刻表タブを開く時はカウントダウンと同じ停留所を表示
+
+  _currentTabIdx = newIdx;
+  slideTo(newIdx, true);
+
+  if (v === 'timetable') {
     timetableStopIdx = currentStopIdx;
     document.querySelectorAll('.stop-btn').forEach((b,i)=>{
       b.classList.toggle('active', i===timetableStopIdx);
     });
     renderTimetable();
-    setTimeout(scrollToNowLine, 80);
+    setTimeout(scrollToNowLine, 360);
   }
 }
 
@@ -1787,9 +1835,46 @@ async function runDiagnostics(timetableOk) {
   }
 }
 
+// ─────────────────────────────────────────────────────────
+// スワイプでタブ切替
+// 左スワイプ → 次のタブ、右スワイプ → 前のタブ
+// ─────────────────────────────────────────────────────────
+(function initSwipe() {
+  const MIN_DIST = 50;  // スワイプ判定の最小距離（px）
+  const MAX_VERT = 80;  // 縦方向の許容距離（px）
+
+  let startX = 0, startY = 0;
+
+  document.addEventListener('touchstart', e => {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+  }, { passive: true });
+
+  document.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - startX;
+    const dy = e.changedTouches[0].clientY - startY;
+
+    // 縦スクロールは無視
+    if (Math.abs(dy) > MAX_VERT) return;
+    if (Math.abs(dx) < MIN_DIST) return;
+
+    // 現在のタブインデックスを取得
+    const current = _currentTabIdx;
+
+    const dir  = dx < 0 ? 'left' : 'right';
+    const next = dx < 0
+      ? Math.min(current + 1, TABS.length - 1)  // 左スワイプ → 次
+      : Math.max(current - 1, 0);                // 右スワイプ → 前
+
+    if (next !== current) showView(TABS[next], dir);
+  }, { passive: true });
+})();
+
 async function init() {
   // DOM要素キャッシュを初期化
   populateDomCache();
+  // スライドコンテナを初期位置（index 0）に設定
+  slideTo(0, false);
 
   // 設定UI適用
   applySettingsUI();
@@ -1824,7 +1909,7 @@ async function init() {
       if (auto !== currentStopIdx) setStop(auto, null, true);
     }
     renderCountdown();
-    if (document.getElementById('view-timetable').style.display !== 'none') {
+    if (_currentTabIdx === TABS.indexOf('timetable')) {
       renderTimetable();
     }
   }, 1000);
