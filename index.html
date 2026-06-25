@@ -223,10 +223,12 @@ body {
    MAIN CONTENT
 ───────────────────────────────────────── */
 .main {
-  padding: 16px 14px;
+  padding: 0;
   padding-bottom: calc(var(--safe-bottom) + 80px);
   max-width: 430px;
   margin: 0 auto;
+  overflow: hidden;
+  position: relative;
 }
 
 /* ─────────────────────────────────────────
@@ -911,22 +913,21 @@ body {
 .walker.warn { animation: run-bounce  0.35s ease-in-out infinite; }
 .walker.ng   { animation: panic-shake 0.2s  ease-in-out infinite; }
 /* ─── タブ切替スライドアニメーション（指追従） ─── */
-.main {
-  overflow: hidden;
-  position: relative;
-}
 
 /* スライドコンテナ: 全パネルを横並びに配置 */
 .slide-container {
   display: flex;
-  width: 300%;          /* パネル3枚分 */
+  width: 100%;
   will-change: transform;
 }
 
 .view-panel {
-  width: calc(100% / 3);
+  width: 100vw;        /* 画面幅に固定 */
+  max-width: 430px;    /* mainのmax-widthに合わせる */
   flex-shrink: 0;
   min-width: 0;
+  padding: 16px 14px;  /* mainのpaddingをここへ移動 */
+  box-sizing: border-box;
 }
 
 /* transition クラスをJSで付け外しして慣性スナップ */
@@ -1767,7 +1768,7 @@ function slideTo(idx, animate) {
     container.classList.remove('animate');
   }
   // 各パネルはコンテナ幅の1/3ずつ → idx * (100/3)% ずらす
-  container.style.transform = `translateX(${-idx * (100 / 3)}%)`;
+  container.style.transform = `translateX(${-idx * 100}vw)`;
 }
 
 function showView(v, direction) {
