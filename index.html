@@ -1026,7 +1026,7 @@ body {
     <div class="upcoming-list" id="upcoming-list"></div>
 
     <div class="notice">
-      ※土・日・祝、夏季休暇（3日間）並びに年末年始は休運となります。<br>
+      ※土・日・祝、夏季休暇（3日間）並びに年末年始は運休となります。<br>
       ※☆印は2号車。道路状況により定時運行できない場合があります。
     </div>
     <div class="copyright" data-app="copyright">© 2026 ooisan</div>
@@ -1044,7 +1044,7 @@ body {
     <div class="tt-now-row">現在時刻 <span class="tt-time" id="tt-time">--:--</span></div>
     <div id="timetable-body"></div>
     <div class="notice" style="margin-top:14px">
-      ※土・日・祝、夏季休暇（3日間）並びに年末年始は休運となります。<br>
+      ※土・日・祝、夏季休暇（3日間）並びに年末年始は運休となります。<br>
       ※☆印は2号車。道路状況により定時運行できない場合があります。<br>
       ※武蔵小金井駅前では長時間の停車ができないため、出発時刻前に到着したバスは一旦回送を行う場合があります。
     </div>
@@ -1551,7 +1551,7 @@ function renderCountdown(){
       const first = STOPS[currentStopIdx].times[0];
       const ndLabel = nd ? `${DOW[nd.getDay()]}曜日 ${p(first.h)}:${p(first.m)}` : '未定';
       card.innerHTML = `<div class="closed-icon">🚌</div>
-        <div class="closed-title">本日は運休日です</div>
+        <div class="closed-title">運休</div>
         <div class="closed-next">次回運行：<strong>${ndLabel}</strong></div>`;
     }
     return;
