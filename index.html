@@ -1777,7 +1777,7 @@ function scrollToNowLine(){
   // 現在時刻ラインをパネルの上から1/3の位置に表示
   const panelTop   = panel.getBoundingClientRect().top;
   const lineTop    = line.getBoundingClientRect().top;
-  const offset     = lineTop - panelTop - (panel.clientHeight / 3);
+  const offset     = lineTop - panelTop - (panel.clientHeight / 5);
   panel.scrollTop += offset;
 }
 
