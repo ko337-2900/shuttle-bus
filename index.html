@@ -1542,18 +1542,21 @@ function renderCountdown(){
 
   // ── 運休日 ──
   if(!isOperatingDay(now)){
-    if(_prevMode !== 'holiday'){
-      _prevMode = 'holiday';
-      label.style.display = 'none';
-      list.innerHTML = '';
-      card.className = 'glass countdown-card closed';
-      const nd = nextOperatingDay(now);
-      const first = STOPS[currentStopIdx].times[0];
-      const ndLabel = nd ? `${DOW[nd.getDay()]}曜日 ${p(first.h)}:${p(first.m)}` : '未定';
-      card.innerHTML = `<div class="closed-icon">🚌</div>
-        <div class="closed-title">運休</div>
-        <div class="closed-next">次回運行：<strong>${ndLabel}</strong></div>`;
-    }
+    _prevMode = 'holiday';
+    label.style.display = 'none';
+    list.innerHTML = '';
+    card.className = 'glass countdown-card closed';
+    const nd = nextOperatingDay(now);
+    // 次回運行日の始発時刻（STOPSが読み込まれていれば使用）
+    const first = (STOPS.length && STOPS[currentStopIdx] && STOPS[currentStopIdx].times[0])
+      ? STOPS[currentStopIdx].times[0] : null;
+    const timeStr = first ? `${p(first.h)}:${p(first.m)}` : '';
+    const ndLabel = nd
+      ? `${DOW[nd.getDay()]}曜日${timeStr ? ' ' + timeStr : ''}`
+      : '未定';
+    card.innerHTML = `<div class="closed-icon">🚌</div>
+      <div class="closed-title">運休</div>
+      <div class="closed-next">次回運行：<strong>${ndLabel}</strong></div>`;
     return;
   }
 
