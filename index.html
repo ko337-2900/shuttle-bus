@@ -1555,7 +1555,7 @@ function renderCountdown(){
       ? `${DOW[nd.getDay()]}曜日${timeStr ? ' ' + timeStr : ''}`
       : '未定';
     card.innerHTML = `<div class="closed-icon">🚌</div>
-      <div class="closed-title">運休</div>
+      <div class="closed-title">本日は運休</div>
       <div class="closed-next">次回運行：<strong>${ndLabel}</strong></div>`;
     return;
   }
