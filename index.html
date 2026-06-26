@@ -1774,11 +1774,31 @@ function scrollToNowLine(){
   const line = document.querySelector('.now-line');
   const panel = document.getElementById('view-timetable');
   if(!line || !panel) return;
-  // 現在時刻ラインをパネルの上から1/3の位置に表示
-  const panelTop   = panel.getBoundingClientRect().top;
-  const lineTop    = line.getBoundingClientRect().top;
-  const offset     = lineTop - panelTop - (panel.clientHeight / 5);
-  panel.scrollTop += offset;
+  const panelTop = panel.getBoundingClientRect().top;
+  const lineTop  = line.getBoundingClientRect().top;
+  const target   = panel.scrollTop + (lineTop - panelTop) - (panel.clientHeight / 5);
+  smoothScrollTo(panel, target, 400);
+}
+
+// イージング付きスムーズスクロール
+function smoothScrollTo(el, target, duration) {
+  const start    = el.scrollTop;
+  const distance = target - start;
+  const startTime = performance.now();
+
+  function ease(t) {
+    // easeInOutCubic
+    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  }
+
+  function step(now) {
+    const elapsed = now - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    el.scrollTop = start + distance * ease(progress);
+    if (progress < 1) requestAnimationFrame(step);
+  }
+
+  requestAnimationFrame(step);
 }
 
 /* ═══════════════════════════════════════════════════════
