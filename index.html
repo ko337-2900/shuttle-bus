@@ -1772,7 +1772,13 @@ function renderTimetable(){
 
 function scrollToNowLine(){
   const line = document.querySelector('.now-line');
-  if(line) line.scrollIntoView({ behavior:'smooth', block:'center' });
+  const panel = document.getElementById('view-timetable');
+  if(!line || !panel) return;
+  // panel内でのみスクロール（bodyをスクロールさせない）
+  const panelTop    = panel.getBoundingClientRect().top;
+  const lineTop     = line.getBoundingClientRect().top;
+  const offset      = lineTop - panelTop - (panel.clientHeight / 2);
+  panel.scrollTop  += offset;
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -1827,9 +1833,11 @@ function showView(v, direction) {
     document.getElementById('tab-' + id).classList.toggle('active', id === v);
   });
 
-  // timetableから離れる時は次のパネルをトップへ
-  const nextPanel = document.getElementById('view-' + v);
-  if (nextPanel) nextPanel.scrollTop = 0;
+  // 全パネルを先頭に戻す
+  ['next','timetable','settings'].forEach(id => {
+    const p = document.getElementById('view-' + id);
+    if(p) p.scrollTop = 0;
+  });
 
   _currentTabIdx = newIdx;
   slideTo(newIdx, true);
