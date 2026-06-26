@@ -1165,6 +1165,11 @@ body {
           </button>
         </div>
         <div class="setting-row" style="padding:0">
+          <button class="setting-action-btn" onclick="clearCache()">
+            キャッシュをクリア
+          </button>
+        </div>
+        <div class="setting-row" style="padding:0">
           <button class="setting-action-btn" onclick="copyUrlAndToast()">
             URLをコピー
           </button>
@@ -2227,6 +2232,20 @@ function closePwaModal(e){
   // オーバーレイ自体のクリック or 閉じるボタン
   if(!e || e.target === document.getElementById('pwa-modal')){
     document.getElementById('pwa-modal').classList.remove('show');
+  }
+}
+
+// キャッシュクリア
+async function clearCache(){
+  try {
+    const keys = await caches.keys();
+    await Promise.all(keys.map(k => caches.delete(k)));
+    showToast('キャッシュをクリアしました');
+    // 1.5秒後にリロードして最新データを取得
+    setTimeout(() => location.reload(), 1500);
+  } catch(err) {
+    console.error('[Cache] クリア失敗:', err);
+    showToast('キャッシュのクリアに失敗しました');
   }
 }
 
