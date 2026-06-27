@@ -2378,7 +2378,29 @@ async function fetchGtfsRt(consumerKey) {
   const t0 = performance.now();
   const res = await fetch(url);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const buffer = await res.arrayBuffer();
+
+  // gzip圧縮の場合はDecompressionStreamで解凍、非対応環境はそのまま
+  let buffer;
+  const encoding = res.headers.get('content-encoding') || '';
+  if (encoding.includes('gzip') && typeof DecompressionStream !== 'undefined') {
+    const ds = new DecompressionStream('gzip');
+    const piped = res.body.pipeThrough(ds);
+    const reader = piped.getReader();
+    const chunks = [];
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+    }
+    const total = chunks.reduce((n, c) => n + c.byteLength, 0);
+    const merged = new Uint8Array(total);
+    let offset = 0;
+    for (const c of chunks) { merged.set(c, offset); offset += c.byteLength; }
+    buffer = merged.buffer;
+  } else {
+    buffer = await res.arrayBuffer();
+  }
+
   return { buffer, size: buffer.byteLength, elapsed: Math.round(performance.now() - t0) };
 }
 
@@ -2554,6 +2576,8 @@ const Odpt = (() => {
         const url = `${ODPT_ENDPOINT}?acl:consumerKey=${encodeURIComponent(cfg.key)}`;
         const res = await fetch(url);
         lines.push(`fetch: HTTP ${res.status} ${res.ok ? '✅' : '❌'}`);
+        lines.push(`encoding: ${res.headers.get('content-encoding') || 'なし'}`);
+        lines.push(`content-type: ${res.headers.get('content-type') || 'なし'}`);
         if (!res.ok) {
           const body = await res.text().catch(() => '');
           lines.push(`body: ${body.slice(0, 100)}`);
