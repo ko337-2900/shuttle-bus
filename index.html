@@ -2323,51 +2323,51 @@ function showGpsError(msg, showRetry) {
 
 // ── proto定義（インライン） ──
 const GTFS_RT_PROTO = `
-syntax = "proto2";
+syntax = "proto3";
 package transit_realtime;
 message FeedMessage {
-  required FeedHeader header = 1;
+  FeedHeader header = 1;
   repeated FeedEntity entity = 2;
 }
 message FeedHeader {
-  required string gtfs_realtime_version = 1;
-  optional Incrementality incrementality = 2 [default = FULL_DATASET];
-  optional uint64 timestamp = 3;
-  enum Incrementality { FULL_DATASET = 0; DIFFERENTIAL = 1; }
+  string gtfs_realtime_version = 1;
+  uint32 incrementality = 2;
+  uint64 timestamp = 3;
 }
 message FeedEntity {
-  required string id = 1;
-  optional bool is_deleted = 3;
-  optional TripUpdate trip_update = 4;
+  string id = 1;
+  bool is_deleted = 3;
+  TripUpdate trip_update = 4;
 }
 message TripUpdate {
-  required TripDescriptor trip = 1;
-  optional VehicleDescriptor vehicle = 3;
+  TripDescriptor trip = 1;
+  VehicleDescriptor vehicle = 3;
   repeated StopTimeUpdate stop_time_update = 2;
-  optional uint64 timestamp = 4;
-  optional int32 delay = 5;
+  uint64 timestamp = 4;
+  int32 delay = 5;
 }
 message TripDescriptor {
-  optional string trip_id = 1;
-  optional string route_id = 5;
-  optional string start_time = 2;
-  optional string start_date = 3;
-  optional ScheduleRelationship schedule_relationship = 4;
-  enum ScheduleRelationship { SCHEDULED = 0; ADDED = 1; UNSCHEDULED = 2; CANCELED = 3; }
+  string trip_id = 1;
+  string route_id = 5;
+  string start_time = 2;
+  string start_date = 3;
+  uint32 schedule_relationship = 4;
 }
-message VehicleDescriptor { optional string id = 1; optional string label = 2; }
+message VehicleDescriptor {
+  string id = 1;
+  string label = 2;
+}
 message StopTimeUpdate {
-  optional uint32 stop_sequence = 1;
-  optional string stop_id = 4;
-  optional StopTimeEvent arrival = 2;
-  optional StopTimeEvent departure = 3;
-  optional ScheduleRelationship schedule_relationship = 5 [default = SCHEDULED];
-  enum ScheduleRelationship { SCHEDULED = 0; SKIPPED = 1; NO_DATA = 2; }
+  uint32 stop_sequence = 1;
+  string stop_id = 4;
+  StopTimeEvent arrival = 2;
+  StopTimeEvent departure = 3;
+  uint32 schedule_relationship = 5;
 }
 message StopTimeEvent {
-  optional int32 delay = 1;
-  optional int64 time = 2;
-  optional int32 uncertainty = 3;
+  int32 delay = 1;
+  int64 time = 2;
+  int32 uncertainty = 3;
 }`;
 
 const ODPT_ENDPOINT = 'https://api.odpt.org/api/v4/gtfs/realtime/SeibuBus_trip_update';
@@ -2446,7 +2446,8 @@ const Odpt = (() => {
   async function initProto() {
     if (_FeedMsg) return;
     if (typeof protobuf === 'undefined') throw new Error('protobufjs未ロード');
-    const root = protobuf.parse(GTFS_RT_PROTO, { keepCase: true }).root;
+    // keepCase:false（デフォルト）でキャメルケース変換を使う
+    const root = protobuf.parse(GTFS_RT_PROTO).root;
     _FeedMsg = root.lookupType('transit_realtime.FeedMessage');
   }
 
