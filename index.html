@@ -2331,43 +2331,30 @@ message FeedMessage {
 }
 message FeedHeader {
   string gtfs_realtime_version = 1;
-  uint32 incrementality = 2;
-  uint64 timestamp = 3;
 }
 message FeedEntity {
   string id = 1;
-  bool is_deleted = 3;
   TripUpdate trip_update = 4;
 }
 message TripUpdate {
   TripDescriptor trip = 1;
-  VehicleDescriptor vehicle = 3;
   repeated StopTimeUpdate stop_time_update = 2;
-  uint64 timestamp = 4;
-  int32 delay = 5;
 }
 message TripDescriptor {
   string trip_id = 1;
-  string route_id = 5;
   string start_time = 2;
   string start_date = 3;
-  uint32 schedule_relationship = 4;
-}
-message VehicleDescriptor {
-  string id = 1;
-  string label = 2;
+  string route_id = 5;
 }
 message StopTimeUpdate {
   uint32 stop_sequence = 1;
-  string stop_id = 4;
   StopTimeEvent arrival = 2;
   StopTimeEvent departure = 3;
-  uint32 schedule_relationship = 5;
+  string stop_id = 4;
 }
 message StopTimeEvent {
-  int32 delay = 1;
-  int64 time = 2;
-  int32 uncertainty = 3;
+  sint32 delay = 1;
+  sint64 time = 2;
 }`;
 
 const ODPT_ENDPOINT = 'https://api.odpt.org/api/v4/gtfs/realtime/SeibuBus_trip_update';
