@@ -2468,7 +2468,9 @@ const Odpt = (() => {
   async function initProto() {
     if (_FeedMsg) return;
     if (typeof protobuf === 'undefined') throw new Error('protobufjs未ロード');
-    // keepCase:false（デフォルト）でキャメルケース変換を使う
+    // longライブラリ不使用（Long型をnumberとして扱う）
+    protobuf.util.Long = null;
+    protobuf.configure();
     const root = protobuf.parse(GTFS_RT_PROTO).root;
     _FeedMsg = root.lookupType('transit_realtime.FeedMessage');
   }
