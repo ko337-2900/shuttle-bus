@@ -9,7 +9,7 @@
 //   CACHE_VERSION を上げるだけで古いキャッシュが自動削除される
 // ─────────────────────────────────────────────────────────
 
-const CACHE_VERSION = 'v0.0.409'; // ← 更新時にここだけ変更する
+const CACHE_VERSION = 'v0.0.4099'; // ← 更新時にここだけ変更する
 const CACHE_NAME    = `shuttle-${CACHE_VERSION}`;
 
 // cache-first で管理する静的アセット
