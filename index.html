@@ -2336,13 +2336,13 @@ message FeedHeader {
 }
 message FeedEntity {
   required string id = 1;
-  optional bool is_deleted = 3;
-  optional TripUpdate trip_update = 4;
+  optional bool is_deleted = 2;
+  optional TripUpdate trip_update = 3;
 }
 message TripUpdate {
   required TripDescriptor trip = 1;
-  optional VehicleDescriptor vehicle = 3;
   repeated StopTimeUpdate stop_time_update = 2;
+  optional VehicleDescriptor vehicle = 3;
   optional uint64 timestamp = 4;
   optional int32 delay = 5;
 }
@@ -2407,7 +2407,7 @@ async function fetchGtfsRt(consumerKey) {
 // ── protobufパース ──
 function parseTripUpdates(buffer, FeedMessage) {
   const msg = FeedMessage.decode(new Uint8Array(buffer));
-  return (msg.entity || []).filter(e => e.trip_update);
+  return (msg.entity || []).filter(e => e.trip_update || e.tripUpdate);
 }
 
 // ── 停留所を検索 ──
@@ -2415,17 +2415,21 @@ function findStop(entities, stopId) {
   const results = [];
   const nowSec = Date.now() / 1000;
   for (const entity of entities) {
-    const tu = entity.trip_update;
-    if (!tu || !tu.stop_time_update) continue;
-    for (const stu of tu.stop_time_update) {
-      if (stu.stop_id !== stopId) continue;
+    const tu = entity.trip_update || entity.tripUpdate;
+    if (!tu) continue;
+    const updates = tu.stop_time_update || tu.stopTimeUpdate || [];
+    for (const stu of updates) {
+      const sid = stu.stop_id || stu.stopId;
+      if (sid !== stopId) continue;
       const dep = stu.departure && stu.departure.time ? Number(stu.departure.time) : null;
       const arr = stu.arrival   && stu.arrival.time   ? Number(stu.arrival.time)   : null;
       const t = dep || arr;
       if (!t || t < nowSec - 60) continue;
+      const tripIdVal = (tu.trip && (tu.trip.trip_id || tu.trip.tripId)) || '';
+      const routeIdVal = (tu.trip && (tu.trip.route_id || tu.trip.routeId)) || '';
       results.push({
-        tripId:        (tu.trip && tu.trip.trip_id)  || '',
-        routeId:       (tu.trip && tu.trip.route_id) || '',
+        tripId:        tripIdVal,
+        routeId:       routeIdVal,
         departureTime: dep,
         arrivalTime:   arr,
         delay:         (stu.departure && stu.departure.delay) || (stu.arrival && stu.arrival.delay) || 0,
