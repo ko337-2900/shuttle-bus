@@ -2139,7 +2139,7 @@ async function init() {
   }, 1000);
 }
 
-init();
+// init()はODPTコード定義後に呼び出す（→ファイル末尾参照）
 
 /* 乗車場所モード */
 function resolveStop(){
@@ -2560,7 +2560,11 @@ function saveOdptKey(v)      { Odpt.saveKey(v); }
 function saveOdptStops()     { Odpt.saveStops(); }
 function saveOdptEnabled(v)  { Odpt.setEnabled(v); }
 
+// ODPTコード定義完了後にアプリ初期化
+init();
+
 /* PWA – Service Worker登録 & 更新時自動リロード */
+if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js').then(reg => {
 
     // 新しいSWがインストール完了 → 即座にactivateさせる
