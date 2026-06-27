@@ -1231,6 +1231,11 @@ body {
         stop_idは ODPT Explorer で調べられます。<br>
         キーは <a href="https://developer.odpt.org/" target="_blank" style="color:var(--text3)">developer.odpt.org</a> で取得。
       </div>
+      <div style="padding:8px 16px 0">
+        <button class="setting-action-btn" onclick="Odpt.diagnose()" style="padding:10px 0;font-size:14px">
+          🔍 接続診断（データ取得できないときに押す）
+        </button>
+      </div>
     </div>
 
     <!-- 表示 -->
@@ -2425,6 +2430,7 @@ const Odpt = (() => {
   let _FeedMsg    = null;
   let _timer      = null;
   let _loading    = false;
+  let _lastError  = null;
 
   // 設定ロード
   function loadOdptSettings() {
@@ -2448,14 +2454,16 @@ const Odpt = (() => {
   async function refresh() {
     if (_loading || !cfg.key || !cfg.enabled) return;
     _loading = true;
+    _lastError = null;
     try {
       await initProto();
       const { buffer } = await fetchGtfsRt(cfg.key);
       _entities = parseTripUpdates(buffer, _FeedMsg);
-      // カードを即時更新
       updateRtBadge();
     } catch(e) {
+      _lastError = e.message;
       console.warn('[ODPT]', e.message);
+      updateRtBadge(); // エラー状態でもバッジ更新
     } finally {
       _loading = false;
     }
@@ -2527,10 +2535,46 @@ const Odpt = (() => {
       </div>`;
   }
 
+  // 診断：画面上にエラー内容を表示する
+  async function diagnose() {
+    const lines = [];
+    lines.push(`protobuf: ${typeof protobuf !== 'undefined' ? '✅ロード済' : '❌未ロード'}`);
+    lines.push(`enabled: ${cfg.enabled ? '✅ON' : '❌OFF'}`);
+    lines.push(`key: ${cfg.key ? '✅あり(' + cfg.key.slice(0,8) + '…)' : '❌なし'}`);
+    lines.push(`stopKgn: ${cfg.stopKgn || '❌未設定'}`);
+    lines.push(`stopMsk: ${cfg.stopMsk || '❌未設定'}`);
+    lines.push(`entities: ${_entities.length}件`);
+    lines.push(`lastError: ${_lastError || 'なし'}`);
+
+    // 実際にfetchを試みてエラーを取得
+    if (cfg.key) {
+      try {
+        lines.push('fetch試行中…');
+        const url = `${ODPT_ENDPOINT}?acl:consumerKey=${encodeURIComponent(cfg.key)}`;
+        const res = await fetch(url);
+        lines.push(`fetch: HTTP ${res.status} ${res.ok ? '✅' : '❌'}`);
+        if (!res.ok) {
+          const body = await res.text().catch(() => '');
+          lines.push(`body: ${body.slice(0, 100)}`);
+        } else {
+          const buf = await res.arrayBuffer();
+          lines.push(`size: ${buf.byteLength} bytes ✅`);
+        }
+      } catch(e) {
+        lines.push(`fetch失敗: ${e.message}`);
+      }
+    }
+
+    showToast(lines.slice(0, 3).join(' / '));
+    // 詳細はalertで表示
+    alert('ODPT診断結果\n\n' + lines.join('\n'));
+  }
+
   // 公開API
   return {
     get cfg()      { return cfg; },
     get entities() { return _entities; },
+    get lastError(){ return _lastError; },
     load()  { cfg = loadOdptSettings(); },
     saveKey(v) { cfg.key = v; saveOdptSettings(cfg); if(cfg.enabled) startTimer(); },
     saveStops() {
@@ -2546,8 +2590,9 @@ const Odpt = (() => {
       if(si('odpt-stop-msk'))   si('odpt-stop-msk').value   = cfg.stopMsk;
       if(si('tog-odpt'))        si('tog-odpt').checked       = cfg.enabled;
     },
-    start:  startTimer,
+    start:    startTimer,
     refresh,
+    diagnose,
     updateRtBadge,
     stopIdForCurrent,
   };
