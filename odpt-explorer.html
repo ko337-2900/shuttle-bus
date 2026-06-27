@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ODPT Explorer – 西武バス</title>
+<style>
+:root {
+  --bg: #0e0e0e; --bg2: #1a1a1a; --bg3: #222;
+  --border: rgba(255,255,255,0.10);
+  --text: #f0f0f0; --text2: #aaa; --text3: #666;
+  --green: #34c759; --red: #ff453a; --blue: #0a84ff; --yellow: #ffd60a;
+  --card: rgba(255,255,255,0.04);
+}
+*,*::before,*::after { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: -apple-system, "SF Mono", "Fira Code", monospace; background:var(--bg); color:var(--text); font-size:13px; }
+header { background:var(--bg2); border-bottom:1px solid var(--border); padding:12px 16px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+header h1 { font-size:16px; font-weight:700; flex:1; min-width:150px; }
+.status-dot { width:8px; height:8px; border-radius:50%; background:var(--text3); display:inline-block; margin-right:4px; }
+.status-dot.ok  { background:var(--green); box-shadow:0 0 6px var(--green); }
+.status-dot.err { background:var(--red); }
+.status-dot.loading { background:var(--yellow); animation:blink 0.6s ease-in-out infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+.pill { padding:4px 10px; border-radius:20px; font-size:11px; font-weight:600; border:1px solid var(--border); background:var(--bg3); cursor:pointer; color:var(--text); white-space:nowrap; }
+.pill:hover { background:rgba(255,255,255,0.08); }
+.pill.primary { background:var(--blue); border-color:var(--blue); color:#fff; }
+.pill.primary:hover { opacity:0.85; }
+#key-input { background:var(--bg3); border:1px solid var(--border); border-radius:8px; padding:5px 10px; color:var(--text); font-size:12px; width:260px; font-family:inherit; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🚌 ODPT Explorer <span style="font-size:10px;color:var(--text3);font-weight:400">西武バス TripUpdate 解析</span></h1>
+  <span id="status-indicator"><span class="status-dot" id="status-dot"></span><span id="status-text" style="font-size:11px;color:var(--text2)">未接続</span></span>
+  <input id="key-input" type="text" placeholder="acl:consumerKey を入力" spellcheck="false">
+  <button class="pill primary" onclick="App.fetch()">取得</button>
+  <button class="pill" id="auto-btn" onclick="App.toggleAuto()">自動更新 OFF</button>
+  <button class="pill" onclick="App.clearCache()">キャッシュ削除</button>
+</header>
+
+<style>
+/* ─── TABS ─── */
+.tabs { display:flex; gap:0; background:var(--bg2); border-bottom:1px solid var(--border); overflow-x:auto; }
+.tab-btn { padding:9px 16px; font-size:12px; font-weight:500; color:var(--text2); border:none; background:none; cursor:pointer; border-bottom:2px solid transparent; white-space:nowrap; }
+.tab-btn.active { color:var(--blue); border-bottom-color:var(--blue); font-weight:700; }
+.tab-panel { display:none; padding:14px 16px; }
+.tab-panel.active { display:block; }
+/* ─── DASHBOARD ─── */
+.dash-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px; margin-bottom:16px; }
+.stat-card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:12px 14px; }
+.stat-card .label { font-size:10px; color:var(--text3); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px; }
+.stat-card .value { font-size:22px; font-weight:800; color:var(--text); }
+.stat-card .sub { font-size:10px; color:var(--text2); margin-top:2px; }
+/* ─── ARRIVAL CARD ─── */
+.arrival-section { margin-bottom:20px; }
+.arrival-title { font-size:13px; font-weight:700; color:var(--text2); letter-spacing:0.5px; margin-bottom:8px; padding:6px 0; border-bottom:1px solid var(--border); }
+.arrival-row { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:12px 14px; margin-bottom:8px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; }
+.arrival-time { font-size:22px; font-weight:800; }
+.arrival-delta { font-size:20px; font-weight:800; }
+.arrival-delta.imminent { color:var(--red); }
+.arrival-delta.soon     { color:var(--yellow); }
+.arrival-delta.ok       { color:var(--green); }
+.arrival-delta.none     { color:var(--text3); }
+.arrival-meta { font-size:10px; color:var(--text2); line-height:1.6; }
+.badge { display:inline-block; padding:2px 7px; border-radius:5px; font-size:10px; font-weight:700; margin-left:4px; }
+.badge.sched   { background:rgba(10,132,255,0.2); color:var(--blue); }
+.badge.cancel  { background:rgba(255,69,58,0.2);  color:var(--red); }
+.badge.added   { background:rgba(52,199,89,0.2);  color:var(--green); }
+/* ─── TRIP LIST ─── */
+.trip-table { width:100%; border-collapse:collapse; }
+.trip-table th { text-align:left; font-size:10px; color:var(--text3); text-transform:uppercase; letter-spacing:1px; padding:6px 8px; border-bottom:1px solid var(--border); }
+.trip-table td { padding:7px 8px; border-bottom:1px solid rgba(255,255,255,0.04); font-size:12px; vertical-align:top; cursor:pointer; }
+.trip-table tr:hover td { background:rgba(255,255,255,0.03); }
+.trip-table tr.selected td { background:rgba(10,132,255,0.10); }
+.monospace { font-family:"SF Mono","Fira Code",monospace; font-size:11px; color:var(--text2); word-break:break-all; }
+/* ─── STOP LIST ─── */
+.stop-row { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:10px 12px; margin-bottom:6px; display:flex; gap:10px; align-items:flex-start; }
+.stop-seq { font-size:11px; color:var(--text3); width:24px; flex-shrink:0; padding-top:1px; }
+.stop-info { flex:1; }
+.stop-id   { font-size:11px; font-weight:700; color:var(--text); }
+.stop-time { font-size:11px; color:var(--text2); }
+.stop-rel  { font-size:10px; color:var(--text3); }
+.stop-highlight { border-color:var(--yellow); background:rgba(255,214,10,0.06); }
+/* ─── SETTINGS ─── */
+.setting-group { margin-bottom:20px; }
+.setting-group h3 { font-size:12px; color:var(--text3); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; }
+.setting-row2 { display:flex; align-items:center; justify-content:space-between; padding:10px 12px; background:var(--card); border:1px solid var(--border); border-radius:8px; margin-bottom:6px; gap:12px; }
+.setting-row2 label { font-size:13px; color:var(--text); }
+.setting-row2 input[type=text], .setting-row2 input[type=number] { background:var(--bg3); border:1px solid var(--border); border-radius:6px; padding:4px 8px; color:var(--text); font-family:inherit; font-size:12px; min-width:80px; }
+.toggle2 { position:relative; width:44px; height:26px; flex-shrink:0; }
+.toggle2 input { opacity:0; width:0; height:0; position:absolute; }
+.toggle2-track { position:absolute; inset:0; border-radius:26px; background:rgba(120,120,128,0.3); transition:background 0.2s; }
+.toggle2 input:checked ~ .toggle2-track { background:var(--green); }
+.toggle2-thumb { position:absolute; top:2px; left:2px; width:22px; height:22px; border-radius:50%; background:#fff; box-shadow:0 1px 4px rgba(0,0,0,0.3); transition:transform 0.2s; }
+.toggle2 input:checked ~ .toggle2-thumb { transform:translateX(18px); }
+/* ─── LOG ─── */
+#log-area { font-size:11px; line-height:1.7; color:var(--text2); background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:10px 12px; height:300px; overflow-y:auto; font-family:"SF Mono","Fira Code",monospace; }
+.log-info  { color:var(--text2); }
+.log-ok    { color:var(--green); }
+.log-warn  { color:var(--yellow); }
+.log-err   { color:var(--red); }
+/* ─── JSON VIEWER ─── */
+#json-area { font-size:11px; line-height:1.7; color:#c9d1d9; background:#0d1117; border:1px solid var(--border); border-radius:8px; padding:12px; overflow:auto; max-height:500px; white-space:pre; font-family:"SF Mono","Fira Code",monospace; }
+/* ─── DEBUG ─── */
+.debug-btn { display:inline-block; padding:7px 14px; border-radius:8px; border:1px solid var(--border); background:var(--bg3); color:var(--text); cursor:pointer; font-size:12px; margin-right:6px; margin-bottom:6px; }
+.debug-btn:hover { background:rgba(255,255,255,0.08); }
+.debug-stat { font-size:12px; color:var(--text2); line-height:2; }
+</style>
+
+<!-- ─── TAB BAR ─── -->
+<div class="tabs" id="tabs">
+  <button class="tab-btn active" onclick="App.showTab('dashboard')">Dashboard</button>
+  <button class="tab-btn" onclick="App.showTab('arrival')">Arrival</button>
+  <button class="tab-btn" onclick="App.showTab('trips')">Trip一覧</button>
+  <button class="tab-btn" onclick="App.showTab('stops')">Stop詳細</button>
+  <button class="tab-btn" onclick="App.showTab('json')">JSON</button>
+  <button class="tab-btn" onclick="App.showTab('settings')">Settings</button>
+  <button class="tab-btn" onclick="App.showTab('debug')">Debug</button>
+</div>
+
+<!-- DASHBOARD -->
+<div id="tab-dashboard" class="tab-panel active">
+  <div class="dash-grid" id="dash-stats">
+    <div class="stat-card"><div class="label">接続状態</div><div class="value" id="ds-conn" style="font-size:14px">–</div></div>
+    <div class="stat-card"><div class="label">最終更新</div><div class="value" id="ds-time" style="font-size:14px">–</div></div>
+    <div class="stat-card"><div class="label">取得サイズ</div><div class="value" id="ds-size">–</div><div class="sub">bytes</div></div>
+    <div class="stat-card"><div class="label">応答時間</div><div class="value" id="ds-resp">–</div><div class="sub">ms</div></div>
+    <div class="stat-card"><div class="label">TripUpdate</div><div class="value" id="ds-trips">–</div><div class="sub">件</div></div>
+    <div class="stat-card"><div class="label">StopTimeUpdate</div><div class="value" id="ds-stops">–</div><div class="sub">件</div></div>
+  </div>
+  <div style="font-size:11px;color:var(--text3);padding:8px 0">
+    <strong style="color:var(--text2)">監視停留所:</strong>
+    <span id="ds-watch-stops">設定から登録してください</span>
+  </div>
+</div>
+
+<!-- ARRIVAL -->
+<div id="tab-arrival" class="tab-panel">
+  <div id="arrival-content">
+    <div style="color:var(--text3);padding:20px 0">「取得」ボタンでデータを読み込んでください。</div>
+  </div>
+</div>
+
+<!-- TRIPS -->
+<div id="tab-trips" class="tab-panel">
+  <div style="margin-bottom:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+    <input id="trip-search" type="text" placeholder="trip_id / route_id で検索…"
+      style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:5px 10px;color:var(--text);font-size:12px;flex:1;min-width:160px;font-family:inherit"
+      oninput="App.filterTrips(this.value)">
+    <span id="trip-count" style="font-size:11px;color:var(--text3)"></span>
+  </div>
+  <div style="overflow-x:auto">
+    <table class="trip-table" id="trip-table">
+      <thead><tr>
+        <th>trip_id</th><th>route_id</th><th>vehicle</th><th>relationship</th><th>stops</th><th>timestamp</th>
+      </tr></thead>
+      <tbody id="trip-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- STOPS -->
+<div id="tab-stops" class="tab-panel">
+  <div style="margin-bottom:10px;font-size:11px;color:var(--text3)">Trip一覧で行をクリックすると Stop詳細を表示します。</div>
+  <div id="stops-content"><div style="color:var(--text3)">Tripを選択してください。</div></div>
+</div>
+
+<!-- JSON -->
+<div id="tab-json" class="tab-panel">
+  <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+    <button class="pill" onclick="App.copyJson()">コピー</button>
+    <button class="pill" onclick="App.downloadJson()">ダウンロード</button>
+    <input id="json-search" type="text" placeholder="キーワードで検索…"
+      style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:5px 10px;color:var(--text);font-size:12px;flex:1;min-width:140px;font-family:inherit"
+      oninput="App.searchJson(this.value)">
+  </div>
+  <div id="json-area">データを取得してください。</div>
+</div>
+
+<!-- SETTINGS -->
+<div id="tab-settings" class="tab-panel">
+  <div class="setting-group">
+    <h3>API</h3>
+    <div class="setting-row2">
+      <label>consumerKey</label>
+      <input type="text" id="s-key" placeholder="xxxx-xxxx-xxxx" style="width:260px" oninput="App.saveKey(this.value)">
+    </div>
+    <div class="setting-row2">
+      <label>自動更新</label>
+      <label class="toggle2"><input type="checkbox" id="s-auto" onchange="App.toggleAuto()"><div class="toggle2-track"></div><div class="toggle2-thumb"></div></label>
+    </div>
+    <div class="setting-row2">
+      <label>更新間隔（秒）</label>
+      <input type="number" id="s-interval" value="30" min="10" max="300" style="width:80px" oninput="App.saveInterval(this.value)">
+    </div>
+  </div>
+  <div class="setting-group">
+    <h3>監視停留所</h3>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:8px">
+      西武バスのGTFS stop_id を登録します。Trip取得後に自動検出も可能です。<br>
+      方向: マンション内→武蔵小金井駅方面、マンション外→小金井公園北方面
+    </div>
+    <div class="setting-row2">
+      <label>小金井公園北<br><span style="font-size:10px;color:var(--text3)">（マンション内用）</span></label>
+      <input type="text" id="s-stop-kgn" placeholder="stop_id" style="width:180px" oninput="App.saveStops()">
+    </div>
+    <div class="setting-row2">
+      <label>武蔵小金井駅<br><span style="font-size:10px;color:var(--text3)">（マンション外用）</span></label>
+      <input type="text" id="s-stop-msk" placeholder="stop_id" style="width:180px" oninput="App.saveStops()">
+    </div>
+    <div style="margin-top:8px">
+      <button class="pill" onclick="App.autoDetectStops()">🔍 Tripデータからstop_idを自動検出</button>
+    </div>
+  </div>
+  <div class="setting-group">
+    <h3>表示</h3>
+    <div class="setting-row2">
+      <label>ログ保存</label>
+      <label class="toggle2"><input type="checkbox" id="s-log" onchange="App.saveLogPref(this.checked)"><div class="toggle2-track"></div><div class="toggle2-thumb"></div></label>
+    </div>
+    <div class="setting-row2">
+      <label>GPS使用</label>
+      <label class="toggle2"><input type="checkbox" id="s-gps"><div class="toggle2-track"></div><div class="toggle2-thumb"></div></label>
+    </div>
+  </div>
+</div>
+
+<!-- DEBUG -->
+<div id="tab-debug" class="tab-panel">
+  <div style="margin-bottom:12px">
+    <button class="debug-btn" onclick="App.debugFetch()">🔌 API接続テスト</button>
+    <button class="debug-btn" onclick="App.clearLS()">🗑 LocalStorage削除</button>
+    <button class="debug-btn" onclick="App.clearLog()">📋 ログクリア</button>
+    <button class="debug-btn" onclick="App.downloadJson()">⬇ JSONダウンロード</button>
+  </div>
+  <div id="debug-stats" class="debug-stat"></div>
+  <div style="margin-top:12px;font-size:11px;color:var(--text3);margin-bottom:6px">実行ログ</div>
+  <div id="log-area"></div>
+</div>
+
+<!-- protobuf-js CDN (dcodeIO/protobufjs) -->
+<script src="https://cdn.jsdelivr.net/npm/protobufjs@7.4.0/dist/protobuf.min.js"></script>
+<script>
+/* ═══════════════════════════════════════════════════
+   ODPT Explorer – Core Logic
+   ※ここの関数は既存アプリ(index.html)へ流用可能
+═══════════════════════════════════════════════════ */
+
+/* ─── GTFS-RT proto定義（インライン） ─── */
+const GTFS_RT_PROTO = `
+syntax = "proto2";
+package transit_realtime;
+message FeedMessage {
+  required FeedHeader header = 1;
+  repeated FeedEntity entity = 2;
+}
+message FeedHeader {
+  required string gtfs_realtime_version = 1;
+  optional Incrementality incrementality = 2 [default = FULL_DATASET];
+  optional uint64 timestamp = 3;
+  enum Incrementality { FULL_DATASET = 0; DIFFERENTIAL = 1; }
+}
+message FeedEntity {
+  required string id = 1;
+  optional bool is_deleted = 3;
+  optional TripUpdate trip_update = 4;
+  optional VehiclePosition vehicle = 5;
+}
+message TripUpdate {
+  required TripDescriptor trip = 1;
+  optional VehicleDescriptor vehicle = 3;
+  repeated StopTimeUpdate stop_time_update = 2;
+  optional uint64 timestamp = 4;
+  optional int32 delay = 5;
+}
+message TripDescriptor {
+  optional string trip_id = 1;
+  optional string route_id = 5;
+  optional string start_time = 2;
+  optional string start_date = 3;
+  optional ScheduleRelationship schedule_relationship = 4;
+  enum ScheduleRelationship { SCHEDULED = 0; ADDED = 1; UNSCHEDULED = 2; CANCELED = 3; }
+}
+message VehicleDescriptor { optional string id = 1; optional string label = 2; optional string license_plate = 3; }
+message StopTimeUpdate {
+  optional uint32 stop_sequence = 1;
+  optional string stop_id = 4;
+  optional StopTimeEvent arrival = 2;
+  optional StopTimeEvent departure = 3;
+  optional ScheduleRelationship schedule_relationship = 5 [default = SCHEDULED];
+  enum ScheduleRelationship { SCHEDULED = 0; SKIPPED = 1; NO_DATA = 2; }
+}
+message StopTimeEvent {
+  optional int32 delay = 1;
+  optional int64 time = 2;
+  optional int32 uncertainty = 3;
+}
+message VehiclePosition {
+  optional TripDescriptor trip = 1;
+  optional VehicleDescriptor vehicle = 8;
+  optional Position position = 2;
+  optional uint32 current_stop_sequence = 3;
+  optional string stop_id = 7;
+}
+message Position {
+  required float latitude = 1;
+  required float longitude = 2;
+  optional float bearing = 3;
+  optional double odometer = 4;
+  optional float speed = 5;
+}`;
+</script>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   ★ 流用可能関数群 (既存アプリへそのままコピー可)
+═══════════════════════════════════════════════════ */
+
+const ODPT_ENDPOINT = 'https://api.odpt.org/api/v4/gtfs/realtime/SeibuBus_trip_update';
+
+/**
+ * GTFS-Realtime バイナリを fetch して ArrayBuffer を返す
+ * @param {string} consumerKey
+ * @returns {Promise<{buffer: ArrayBuffer, size: number, elapsed: number}>}
+ */
+async function fetchGtfsRt(consumerKey) {
+  const url = `${ODPT_ENDPOINT}?acl:consumerKey=${encodeURIComponent(consumerKey)}`;
+  const t0 = performance.now();
+  const res = await fetch(url);
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new Error(`HTTP ${res.status}: ${body.slice(0, 120)}`);
+  }
+  const buffer = await res.arrayBuffer();
+  return { buffer, size: buffer.byteLength, elapsed: Math.round(performance.now() - t0) };
+}
+
+/**
+ * ArrayBuffer を GTFS-RT protobuf でパースし、TripUpdate配列を返す
+ * @param {ArrayBuffer} buffer
+ * @param {object} FeedMessage  protobuf.js でロード済みの FeedMessage 型
+ * @returns {Array} entity[]
+ */
+function parseTripUpdates(buffer, FeedMessage) {
+  const msg = FeedMessage.decode(new Uint8Array(buffer));
+  return (msg.entity || []).filter(e => e.tripUpdate);
+}
+
+/**
+ * TripUpdate エンティティ配列から、指定 stop_id の最近到着情報を抽出する
+ * @param {Array} entities  parseTripUpdates() の戻り値
+ * @param {string} stopId  監視するGTFS stop_id
+ * @returns {Array<{tripId, routeId, departureTime, arrivalTime, delay, scheduleRel}>}
+ *   departureTime / arrivalTime は Unix timestamp (秒) または null
+ */
+function findStop(entities, stopId) {
+  const results = [];
+  for (const entity of entities) {
+    const tu = entity.tripUpdate;
+    if (!tu || !tu.stopTimeUpdate) continue;
+    for (const stu of tu.stopTimeUpdate) {
+      if (stu.stopId !== stopId) continue;
+      const dep = stu.departure && stu.departure.time
+        ? Number(stu.departure.time) : null;
+      const arr = stu.arrival && stu.arrival.time
+        ? Number(stu.arrival.time) : null;
+      results.push({
+        tripId:      tu.trip.tripId  || '',
+        routeId:     tu.trip.routeId || '',
+        departureTime: dep,
+        arrivalTime:   arr,
+        delay:         (stu.departure && stu.departure.delay) || (stu.arrival && stu.arrival.delay) || 0,
+        scheduleRel:   stu.scheduleRelationship,
+      });
+    }
+  }
+  // 出発時刻の昇順ソート（過去のものは除外）
+  const nowSec = Date.now() / 1000;
+  return results
+    .filter(r => (r.departureTime || r.arrivalTime || 0) > nowSec - 60)
+    .sort((a, b) => (a.departureTime || a.arrivalTime || 0) - (b.departureTime || b.arrivalTime || 0));
+}
+
+/**
+ * 最も近い次のバスを1件返す (既存アプリの組み込み用)
+ * @param {Array} entities
+ * @param {string} stopId
+ * @returns {{minsUntil: number, departureTime: number, tripId: string, routeId: string}|null}
+ */
+function getNearestBus(entities, stopId) {
+  const hits = findStop(entities, stopId);
+  if (!hits.length) return null;
+  const first = hits[0];
+  const t = first.departureTime || first.arrivalTime;
+  if (!t) return null;
+  const minsUntil = Math.round((t - Date.now() / 1000) / 60);
+  return { minsUntil, departureTime: t, tripId: first.tripId, routeId: first.routeId };
+}
+
+/* ─── 時刻フォーマット ─── */
+function fmtTime(unixSec) {
+  if (!unixSec) return '--:--';
+  const d = new Date(unixSec * 1000);
+  return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+function fmtMins(unixSec) {
+  if (!unixSec) return null;
+  const diff = Math.round((unixSec - Date.now() / 1000) / 60);
+  return diff;
+}
+</script>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   App – Explorer UI Logic
+═══════════════════════════════════════════════════ */
+const App = (() => {
+  /* ── State ── */
+  let _entities   = [];   // parseTripUpdates() の結果
+  let _rawBuffer  = null; // 最後に取得したバッファ
+  let _rawJson    = null; // デシリアライズ済みJSON（デバッグ用）
+  let _autoTimer  = null;
+  let _FeedMessage= null; // protobufjs ロード後にセット
+  let _lastFetchMs = 0;
+  let _lastSize    = 0;
+  let _lastElapsed = 0;
+
+  /* ── Settings ── */
+  const LS = { get: k => { try{ return localStorage.getItem(k) }catch{ return null } },
+               set: (k,v) => { try{ localStorage.setItem(k,v) }catch{} } };
+  let cfg = (() => {
+    try { return Object.assign({key:'',stopKgn:'',stopMsk:'',autoRefresh:false,interval:30,saveLog:false},
+                               JSON.parse(LS.get('odpt_cfg')||'{}')); }
+    catch { return {key:'',stopKgn:'',stopMsk:'',autoRefresh:false,interval:30,saveLog:false}; }
+  })();
+  const saveCfg = () => LS.set('odpt_cfg', JSON.stringify(cfg));
+
+  /* ── Tab ── */
+  const showTab = name => {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    const btns = document.querySelectorAll('.tab-btn');
+    const tabs = ['dashboard','arrival','trips','stops','json','settings','debug'];
+    const idx = tabs.indexOf(name);
+    if(idx >= 0) btns[idx].classList.add('active');
+  };
+
+  /* ── Log ── */
+  const logs = [];
+  const log = (msg, level='info') => {
+    const ts = new Date().toLocaleTimeString('ja-JP');
+    const entry = `[${ts}] ${msg}`;
+    logs.unshift(entry);
+    if(logs.length > 200) logs.pop();
+    const el = document.getElementById('log-area');
+    if(!el) return;
+    const cls = {info:'log-info',ok:'log-ok',warn:'log-warn',err:'log-err'}[level] || 'log-info';
+    const div = document.createElement('div');
+    div.className = cls;
+    div.textContent = entry;
+    if(el.firstChild) el.insertBefore(div, el.firstChild);
+    else el.appendChild(div);
+  };
+  const clearLog = () => { logs.length = 0; const el = document.getElementById('log-area'); if(el) el.innerHTML = ''; };
+
+  /* ── Status indicator ── */
+  const setStatus = (state, text) => {
+    const dot  = document.getElementById('status-dot');
+    const span = document.getElementById('status-text');
+    if(!dot||!span) return;
+    dot.className = 'status-dot ' + state;
+    span.textContent = text;
+  };
+
+  /* ── protobuf 初期化 ── */
+  const initProto = () => new Promise((resolve, reject) => {
+    if(_FeedMessage) { resolve(); return; }
+    if(typeof protobuf === 'undefined') {
+      reject(new Error('protobufjs が読み込まれていません'));
+      return;
+    }
+    protobuf.parse(GTFS_RT_PROTO, { keepCase: true }).root
+      .then ? protobuf.parse(GTFS_RT_PROTO, { keepCase: true })
+    : (() => {})();
+    // 同期パース
+    const root = protobuf.parse(GTFS_RT_PROTO, { keepCase: true }).root;
+    _FeedMessage = root.lookupType('transit_realtime.FeedMessage');
+    resolve();
+  });
+
+  /* ── Fetch & Parse ── */
+  const fetchData = async () => {
+    const key = cfg.key.trim();
+    if(!key) { log('consumerKey が未設定です', 'warn'); setStatus('err','キー未設定'); return; }
+    setStatus('loading', '取得中…');
+    log('GTFS-RT fetch 開始');
+    try {
+      await initProto();
+      const { buffer, size, elapsed } = await fetchGtfsRt(key);
+      _rawBuffer  = buffer;
+      _lastFetchMs = Date.now();
+      _lastSize    = size;
+      _lastElapsed = elapsed;
+      log(`取得完了 ${size.toLocaleString()} bytes / ${elapsed}ms`, 'ok');
+
+      _entities = parseTripUpdates(buffer, _FeedMessage);
+      log(`パース完了: ${_entities.length} TripUpdates`, 'ok');
+
+      // JSONも保存（デバッグ用）
+      _rawJson = _entities.map(e => {
+        const tu = e.tripUpdate;
+        return {
+          id: e.id,
+          trip_id:   tu.trip?.tripId,
+          route_id:  tu.trip?.routeId,
+          vehicle_id: tu.vehicle?.id,
+          schedule_relationship: tu.trip?.scheduleRelationship,
+          timestamp: tu.timestamp ? new Date(Number(tu.timestamp)*1000).toISOString() : null,
+          stop_time_updates: (tu.stopTimeUpdate||[]).map(s => ({
+            stop_sequence: s.stopSequence,
+            stop_id: s.stopId,
+            arrival_time:   s.arrival?.time   ? Number(s.arrival.time)   : null,
+            departure_time: s.departure?.time ? Number(s.departure.time) : null,
+            arrival_delay:   s.arrival?.delay,
+            departure_delay: s.departure?.delay,
+            schedule_rel: s.scheduleRelationship,
+          }))
+        };
+      });
+
+      setStatus('ok', `更新 ${new Date().toLocaleTimeString('ja-JP')}`);
+      updateDashboard();
+      updateArrival();
+      updateTripTable();
+      updateJsonView();
+
+    } catch(err) {
+      log(`エラー: ${err.message}`, 'err');
+      setStatus('err', `エラー: ${err.message.slice(0,40)}`);
+    }
+  };
+
+  /* ── Dashboard ── */
+  const updateDashboard = () => {
+    const el = id => document.getElementById(id);
+    const totalStops = _entities.reduce((n,e) => n + (e.tripUpdate?.stopTimeUpdate?.length||0), 0);
+    el('ds-conn').textContent  = '✅ 接続OK';
+    el('ds-conn').style.color  = 'var(--green)';
+    el('ds-time').textContent  = new Date(_lastFetchMs).toLocaleTimeString('ja-JP');
+    el('ds-size').textContent  = _lastSize.toLocaleString();
+    el('ds-resp').textContent  = _lastElapsed;
+    el('ds-trips').textContent = _entities.length;
+    el('ds-stops').textContent = totalStops;
+    // 監視停留所表示
+    const watchHtml = [cfg.stopKgn, cfg.stopMsk]
+      .filter(Boolean).map(s => `<code style="background:var(--bg3);padding:1px 5px;border-radius:4px">${s}</code>`).join(' / ');
+    el('ds-watch-stops').innerHTML = watchHtml || '<em>未設定</em>';
+  };
+</script>
+
+<script>
+/* ── Arrival タブ ── */
+const updateArrival = () => {
+  const el = document.getElementById('arrival-content');
+  if(!el) return;
+  const stops = [
+    { label:'小金井公園北方面（マンション内）', id: cfg.stopKgn },
+    { label:'武蔵小金井駅方面（マンション外）', id: cfg.stopMsk },
+  ].filter(s => s.id);
+
+  if(!stops.length) {
+    el.innerHTML = '<div style="color:var(--text3);padding:12px 0">Settingsで監視停留所を設定してください。</div>';
+    return;
+  }
+
+  let html = '';
+  for(const stop of stops) {
+    const hits = findStop(_entities, stop.id);
+    html += `<div class="arrival-section">
+      <div class="arrival-title">${stop.label} <code style="font-size:10px;color:var(--text3)">${stop.id}</code></div>`;
+    if(!hits.length) {
+      html += '<div class="arrival-row"><span style="color:var(--text3)">該当便なし</span></div>';
+    } else {
+      const now = Date.now() / 1000;
+      hits.slice(0, 5).forEach(h => {
+        const t    = h.departureTime || h.arrivalTime;
+        const mins = Math.round((t - now) / 60);
+        const cls  = mins <= 1 ? 'imminent' : mins <= 5 ? 'soon' : 'ok';
+        const minsLabel = mins <= 0 ? 'まもなく' : `あと ${mins} 分`;
+        const relMap = {0:'SCHEDULED',1:'ADDED',2:'UNSCHEDULED',3:'CANCELED'};
+        const relLabel = relMap[h.scheduleRel] || 'SCHEDULED';
+        const relCls   = h.scheduleRel === 3 ? 'cancel' : h.scheduleRel === 1 ? 'added' : 'sched';
+        const delayStr = h.delay ? `(${h.delay > 0 ? '+' : ''}${h.delay}秒)` : '';
+        html += `<div class="arrival-row">
+          <div>
+            <div class="arrival-time">${fmtTime(t)}</div>
+            <div class="arrival-meta">
+              route: ${h.routeId||'–'} / trip: ${(h.tripId||'').slice(0,20)}<br>
+              <span class="badge ${relCls}">${relLabel}</span>${delayStr}
+            </div>
+          </div>
+          <div class="arrival-delta ${cls}">${minsLabel}</div>
+        </div>`;
+      });
+    }
+    html += '</div>';
+  }
+  el.innerHTML = html;
+};
+
+/* ── Trip一覧テーブル ── */
+let _filteredEntities = [];
+const updateTripTable = () => {
+  _filteredEntities = _entities;
+  renderTripTable(_entities);
+  document.getElementById('trip-count').textContent = `${_entities.length} 件`;
+};
+const filterTrips = q => {
+  const kw = q.toLowerCase();
+  _filteredEntities = !kw ? _entities : _entities.filter(e => {
+    const tu = e.tripUpdate;
+    return (tu.trip?.tripId||'').toLowerCase().includes(kw)
+        || (tu.trip?.routeId||'').toLowerCase().includes(kw)
+        || (tu.vehicle?.id||'').toLowerCase().includes(kw);
+  });
+  document.getElementById('trip-count').textContent = `${_filteredEntities.length} / ${_entities.length} 件`;
+  renderTripTable(_filteredEntities);
+};
+const renderTripTable = entities => {
+  const tbody = document.getElementById('trip-body');
+  if(!tbody) return;
+  const relMap = {0:'SCHEDULED',1:'ADDED',2:'UNSCHEDULED',3:'CANCELED'};
+  tbody.innerHTML = entities.slice(0, 200).map((e,i) => {
+    const tu = e.tripUpdate;
+    const ts = tu.timestamp ? new Date(Number(tu.timestamp)*1000).toLocaleTimeString('ja-JP') : '–';
+    const rel = relMap[tu.trip?.scheduleRelationship] || '–';
+    return `<tr onclick="App.selectTrip(${i})" data-idx="${i}">
+      <td class="monospace">${(tu.trip?.tripId||'').slice(0,30)}</td>
+      <td class="monospace">${tu.trip?.routeId||'–'}</td>
+      <td class="monospace">${tu.vehicle?.id||'–'}</td>
+      <td>${rel}</td>
+      <td>${(tu.stopTimeUpdate||[]).length}</td>
+      <td>${ts}</td>
+    </tr>`;
+  }).join('');
+};
+let _selectedTripIdx = -1;
+const selectTrip = idx => {
+  _selectedTripIdx = idx;
+  // ハイライト
+  document.querySelectorAll('#trip-body tr').forEach((r,i) => r.classList.toggle('selected', i === idx));
+  // Stop詳細表示
+  const entity = _filteredEntities[idx];
+  if(!entity) return;
+  const tu = entity.tripUpdate;
+  const sus = tu.stopTimeUpdate || [];
+  const watchIds = new Set([cfg.stopKgn, cfg.stopMsk].filter(Boolean));
+  const relMap = {0:'SCHEDULED',1:'SKIPPED',2:'NO_DATA'};
+  const html = sus.map(s => {
+    const isWatch = watchIds.has(s.stopId);
+    const arr = s.arrival?.time ? fmtTime(Number(s.arrival.time)) : '–';
+    const dep = s.departure?.time ? fmtTime(Number(s.departure.time)) : '–';
+    const arrDel = s.arrival?.delay ? `<span style="color:var(--yellow)">${s.arrival.delay > 0 ? '+' : ''}${s.arrival.delay}s</span>` : '';
+    const depDel = s.departure?.delay ? `<span style="color:var(--yellow)">${s.departure.delay > 0 ? '+' : ''}${s.departure.delay}s</span>` : '';
+    return `<div class="stop-row${isWatch ? ' stop-highlight' : ''}">
+      <div class="stop-seq">${s.stopSequence||'–'}</div>
+      <div class="stop-info">
+        <div class="stop-id">${s.stopId||'–'}${isWatch ? ' ⭐' : ''}</div>
+        <div class="stop-time">到着: ${arr} ${arrDel} &nbsp; 出発: ${dep} ${depDel}</div>
+        <div class="stop-rel">${relMap[s.scheduleRelationship]||'SCHEDULED'}</div>
+      </div>
+    </div>`;
+  }).join('');
+  const panel = document.getElementById('stops-content');
+  if(panel) panel.innerHTML = `<div style="font-size:11px;color:var(--text2);margin-bottom:10px">
+    trip_id: <code style="background:var(--bg3);padding:1px 5px;border-radius:4px">${tu.trip?.tripId||'–'}</code>
+    &nbsp; route_id: <code style="background:var(--bg3);padding:1px 5px;border-radius:4px">${tu.trip?.routeId||'–'}</code>
+  </div>${html || '<div style="color:var(--text3)">StopTimeUpdateなし</div>'}`;
+  showTab('stops');
+};
+
+/* ── JSON view ── */
+const updateJsonView = () => {
+  const el = document.getElementById('json-area');
+  if(!el || !_rawJson) return;
+  el.textContent = JSON.stringify(_rawJson, null, 2);
+};
+const searchJson = q => {
+  if(!_rawJson) return;
+  const full = JSON.stringify(_rawJson, null, 2);
+  const el = document.getElementById('json-area');
+  if(!q) { el.textContent = full; return; }
+  const lines = full.split('\n');
+  const kw = q.toLowerCase();
+  const filtered = lines.filter(l => l.toLowerCase().includes(kw));
+  el.textContent = filtered.join('\n') || '(マッチなし)';
+};
+const copyJson = () => {
+  if(!_rawJson) return;
+  navigator.clipboard.writeText(JSON.stringify(_rawJson, null, 2))
+    .then(() => alert('コピーしました'))
+    .catch(() => alert('コピー失敗'));
+};
+const downloadJson = () => {
+  if(!_rawJson) return;
+  const blob = new Blob([JSON.stringify(_rawJson, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `seibu_trip_update_${Date.now()}.json`;
+  a.click();
+};
+
+/* ── stop_id 自動検出 ── */
+const autoDetectStops = () => {
+  if(!_entities.length) { alert('先にデータを取得してください。'); return; }
+  // 全stop_idを抽出してユニーク化
+  const allStopIds = new Set();
+  for(const e of _entities) {
+    for(const s of (e.tripUpdate?.stopTimeUpdate||[])) {
+      if(s.stopId) allStopIds.add(s.stopId);
+    }
+  }
+  const list = [...allStopIds].sort();
+  const msg = `取得した stop_id 一覧 (${list.length}件):\n\n${list.join('\n')}\n\n`
+    + `「小金井公園北」「武蔵小金井」を含む可能性のあるIDをコピーして設定フォームに貼り付けてください。`;
+  alert(msg);
+  log(`stop_id 自動検出: ${list.length}件`, 'ok');
+};
+
+/* ── 自動更新 ── */
+const toggleAuto = () => {
+  const checkbox = document.getElementById('s-auto');
+  // ヘッダーボタン押下時はcheckboxを反転
+  if(document.activeElement !== checkbox) {
+    cfg.autoRefresh = !cfg.autoRefresh;
+    if(checkbox) checkbox.checked = cfg.autoRefresh;
+  } else {
+    cfg.autoRefresh = checkbox.checked;
+  }
+  saveCfg();
+  if(_autoTimer) { clearInterval(_autoTimer); _autoTimer = null; }
+  if(cfg.autoRefresh) {
+    _autoTimer = setInterval(fetchData, (cfg.interval||30) * 1000);
+    log(`自動更新 ON (${cfg.interval}秒)`, 'ok');
+  } else {
+    log('自動更新 OFF');
+  }
+  const btn = document.getElementById('auto-btn');
+  if(btn) btn.textContent = `自動更新 ${cfg.autoRefresh ? 'ON' : 'OFF'}`;
+};
+
+/* ── Settings handlers ── */
+const saveKey = v => {
+  cfg.key = v;
+  saveCfg();
+  const ki = document.getElementById('key-input');
+  if(ki) ki.value = v;
+};
+const saveInterval = v => { cfg.interval = parseInt(v)||30; saveCfg(); };
+const saveStops = () => {
+  cfg.stopKgn = (document.getElementById('s-stop-kgn')?.value||'').trim();
+  cfg.stopMsk = (document.getElementById('s-stop-msk')?.value||'').trim();
+  saveCfg();
+};
+const saveLogPref = v => { cfg.saveLog = v; saveCfg(); };
+
+/* ── Debug ── */
+const debugFetch = async () => {
+  showTab('debug');
+  log('接続テスト開始');
+  await fetchData();
+  const el = document.getElementById('debug-stats');
+  if(el) el.innerHTML = `
+    取得サイズ: <strong>${_lastSize.toLocaleString()} bytes</strong><br>
+    応答時間: <strong>${_lastElapsed} ms</strong><br>
+    TripUpdate数: <strong>${_entities.length}</strong><br>
+    最終取得: <strong>${new Date(_lastFetchMs).toLocaleString('ja-JP')}</strong>
+  `;
+};
+const clearCache = () => { log('キャッシュ削除（このExplorerはSWなし）'); };
+const clearLS    = () => { try{ localStorage.clear(); log('LocalStorage 削除済み', 'warn'); } catch(e){ log('削除失敗: '+e.message,'err'); } };
+
+/* ── Init ── */
+const init = () => {
+  // 設定をUIに反映
+  const si = v => document.getElementById(v);
+  if(si('key-input'))  si('key-input').value  = cfg.key;
+  if(si('s-key'))      si('s-key').value      = cfg.key;
+  if(si('s-auto'))     si('s-auto').checked   = cfg.autoRefresh;
+  if(si('s-interval')) si('s-interval').value = cfg.interval;
+  if(si('s-stop-kgn')) si('s-stop-kgn').value = cfg.stopKgn;
+  if(si('s-stop-msk')) si('s-stop-msk').value = cfg.stopMsk;
+  if(si('s-log'))      si('s-log').checked    = cfg.saveLog;
+  const btn = document.getElementById('auto-btn');
+  if(btn) btn.textContent = `自動更新 ${cfg.autoRefresh ? 'ON' : 'OFF'}`;
+  log('ODPT Explorer 起動', 'ok');
+  // keyあれば自動更新セットアップ
+  if(cfg.autoRefresh && cfg.key) {
+    _autoTimer = setInterval(fetchData, (cfg.interval||30) * 1000);
+  }
+};
+
+/* ── ヘッダーkey-input 同期 ── */
+document.getElementById('key-input').addEventListener('input', e => {
+  saveKey(e.target.value);
+});
+
+init();
+
+/* ── Public API ── */
+return {
+  fetch: fetchData,
+  showTab,
+  filterTrips,
+  selectTrip,
+  toggleAuto,
+  autoDetectStops,
+  saveKey,
+  saveInterval,
+  saveStops,
+  saveLogPref,
+  copyJson,
+  downloadJson,
+  searchJson,
+  debugFetch,
+  clearCache,
+  clearLog,
+  clearLS,
+};
+})();
+</script>
+
+</body>
+</html>
