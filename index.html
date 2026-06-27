@@ -2323,38 +2323,51 @@ function showGpsError(msg, showRetry) {
 
 // ── proto定義（インライン） ──
 const GTFS_RT_PROTO = `
-syntax = "proto3";
+syntax = "proto2";
 package transit_realtime;
 message FeedMessage {
-  FeedHeader header = 1;
+  required FeedHeader header = 1;
   repeated FeedEntity entity = 2;
 }
 message FeedHeader {
-  string gtfs_realtime_version = 1;
+  required string gtfs_realtime_version = 1;
+  optional uint32 incrementality = 2;
+  optional uint64 timestamp = 3;
 }
 message FeedEntity {
-  string id = 1;
-  TripUpdate trip_update = 4;
+  required string id = 1;
+  optional bool is_deleted = 3;
+  optional TripUpdate trip_update = 4;
 }
 message TripUpdate {
-  TripDescriptor trip = 1;
+  required TripDescriptor trip = 1;
+  optional VehicleDescriptor vehicle = 3;
   repeated StopTimeUpdate stop_time_update = 2;
+  optional uint64 timestamp = 4;
+  optional int32 delay = 5;
 }
 message TripDescriptor {
-  string trip_id = 1;
-  string start_time = 2;
-  string start_date = 3;
-  string route_id = 5;
+  optional string trip_id = 1;
+  optional string start_time = 2;
+  optional string start_date = 3;
+  optional uint32 schedule_relationship = 4;
+  optional string route_id = 5;
+}
+message VehicleDescriptor {
+  optional string id = 1;
+  optional string label = 2;
 }
 message StopTimeUpdate {
-  uint32 stop_sequence = 1;
-  StopTimeEvent arrival = 2;
-  StopTimeEvent departure = 3;
-  string stop_id = 4;
+  optional uint32 stop_sequence = 1;
+  optional StopTimeEvent arrival = 2;
+  optional StopTimeEvent departure = 3;
+  optional string stop_id = 4;
+  optional uint32 schedule_relationship = 5;
 }
 message StopTimeEvent {
-  sint32 delay = 1;
-  sint64 time = 2;
+  optional int32 delay = 1;
+  optional int64 time = 2;
+  optional int32 uncertainty = 3;
 }`;
 
 const ODPT_ENDPOINT = 'https://api.odpt.org/api/v4/gtfs/realtime/SeibuBus_trip_update';
@@ -2394,7 +2407,7 @@ async function fetchGtfsRt(consumerKey) {
 // ── protobufパース ──
 function parseTripUpdates(buffer, FeedMessage) {
   const msg = FeedMessage.decode(new Uint8Array(buffer));
-  return (msg.entity || []).filter(e => e.tripUpdate);
+  return (msg.entity || []).filter(e => e.trip_update);
 }
 
 // ── 停留所を検索 ──
@@ -2402,17 +2415,17 @@ function findStop(entities, stopId) {
   const results = [];
   const nowSec = Date.now() / 1000;
   for (const entity of entities) {
-    const tu = entity.tripUpdate;
-    if (!tu || !tu.stopTimeUpdate) continue;
-    for (const stu of tu.stopTimeUpdate) {
-      if (stu.stopId !== stopId) continue;
+    const tu = entity.trip_update;
+    if (!tu || !tu.stop_time_update) continue;
+    for (const stu of tu.stop_time_update) {
+      if (stu.stop_id !== stopId) continue;
       const dep = stu.departure && stu.departure.time ? Number(stu.departure.time) : null;
       const arr = stu.arrival   && stu.arrival.time   ? Number(stu.arrival.time)   : null;
       const t = dep || arr;
       if (!t || t < nowSec - 60) continue;
       results.push({
-        tripId:        tu.trip.tripId  || '',
-        routeId:       tu.trip.routeId || '',
+        tripId:        (tu.trip && tu.trip.trip_id)  || '',
+        routeId:       (tu.trip && tu.trip.route_id) || '',
         departureTime: dep,
         arrivalTime:   arr,
         delay:         (stu.departure && stu.departure.delay) || (stu.arrival && stu.arrival.delay) || 0,
@@ -2455,10 +2468,9 @@ const Odpt = (() => {
   async function initProto() {
     if (_FeedMsg) return;
     if (typeof protobuf === 'undefined') throw new Error('protobufjs未ロード');
-    // longライブラリ不使用（Long型をnumberとして扱う）
     protobuf.util.Long = null;
     protobuf.configure();
-    const root = protobuf.parse(GTFS_RT_PROTO).root;
+    const root = protobuf.parse(GTFS_RT_PROTO, { keepCase: true }).root;
     _FeedMsg = root.lookupType('transit_realtime.FeedMessage');
   }
 
