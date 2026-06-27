@@ -2584,6 +2584,9 @@ const Odpt = (() => {
         } else {
           const buf = await res.arrayBuffer();
           lines.push(`size: ${buf.byteLength} bytes ✅`);
+          // 先頭16バイトを16進数で表示
+          const bytes = new Uint8Array(buf).slice(0, 16);
+          lines.push(`先頭bytes: ${Array.from(bytes).map(b => b.toString(16).padStart(2,'0')).join(' ')}`);
         }
       } catch(e) {
         lines.push(`fetch失敗: ${e.message}`);
