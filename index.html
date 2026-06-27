@@ -2574,10 +2574,33 @@ const Odpt = (() => {
     lines.push(`entities: ${_entities.length}件`);
     lines.push(`lastError: ${_lastError || 'なし'}`);
 
+    // 実際の停留所IDをリストアップ
+    if (_entities.length > 0) {
+      const allStopIds = new Set();
+      for (const entity of _entities.slice(0, 10)) { // 最初の10件から収集
+        const tu = entity.trip_update || entity.tripUpdate;
+        if (!tu) continue;
+        const updates = tu.stop_time_update || tu.stopTimeUpdate || [];
+        for (const stu of updates) {
+          const sid = stu.stop_id || stu.stopId;
+          if (sid) allStopIds.add(sid);
+        }
+      }
+      const uniqueIds = Array.from(allStopIds).sort();
+      lines.push(`\n=== 実際のstop_id一覧（${uniqueIds.length}件） ===`);
+      uniqueIds.forEach(id => lines.push(`  ${id}`));
+      
+      // 60013や60001を含むものを強調表示
+      const matches = uniqueIds.filter(id => id.includes('60013') || id.includes('60001'));
+      if (matches.length > 0) {
+        lines.push(`\n🎯 60013/60001を含むID: ${matches.join(', ')}`);
+      }
+    }
+
     // 実際にfetchを試みてエラーを取得
     if (cfg.key) {
       try {
-        lines.push('fetch試行中…');
+        lines.push('\nfetch試行中…');
         const url = `${ODPT_ENDPOINT}?acl:consumerKey=${encodeURIComponent(cfg.key)}`;
         const res = await fetch(url);
         lines.push(`fetch: HTTP ${res.status} ${res.ok ? '✅' : '❌'}`);
@@ -2604,13 +2627,6 @@ const Odpt = (() => {
               lines.push(`entity[0]keys: ${allKeys}`);
               lines.push(`tripUpdate? ${!!e0.tripUpdate}`);
               lines.push(`trip_update? ${!!e0.trip_update}`);
-              // toObjectで展開して確認
-              try {
-                const obj = raw[0].toJSON ? raw[0].toJSON() : JSON.parse(JSON.stringify(raw[0]));
-                const objKeys = Object.keys(obj).join(',');
-                lines.push(`toJSON keys: ${objKeys}`);
-                if(raw.length > 0) lines.push(`JSON[0]: ${JSON.stringify(obj).slice(0,80)}`);
-              } catch(je) { lines.push(`toJSON err: ${je.message}`); }
             }
           } catch(pe) {
             lines.push(`parseエラー: ${pe.message}`);
