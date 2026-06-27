@@ -1654,7 +1654,8 @@ function renderCountdown(){
       : '未定';
     card.innerHTML = `<div class="closed-icon">🚌</div>
       <div class="closed-title">本日は運休</div>
-      <div class="closed-next">次回運行：<strong>${ndLabel}</strong></div>`;
+      <div class="closed-next">次回運行：<strong>${ndLabel}</strong></div>
+      <div id="cd-rt-badge-slot"></div>`;
     return;
   }
 
@@ -1677,7 +1678,8 @@ function renderCountdown(){
       }
       card.innerHTML = `<div class="closed-icon">🌙</div>
         <div class="closed-title">本日の運行は終了しました</div>
-        <div class="closed-next">次回運行：<strong>${ndLabel}</strong></div>`;
+        <div class="closed-next">次回運行：<strong>${ndLabel}</strong></div>
+        <div id="cd-rt-badge-slot"></div>`;
     }
     return;
   }
@@ -2486,12 +2488,6 @@ const Odpt = (() => {
 
     let badge = document.getElementById('cd-rt-badge');
 
-    // normalモード以外(運休・終バス後)はバッジ非表示
-    if (!card.classList.contains('countdown-card') || card.querySelector('.closed-icon')) {
-      if (badge) badge.remove();
-      return;
-    }
-
     const stopId = stopIdForCurrent();
     if (!stopId) {
       if (badge) badge.remove();
@@ -2511,14 +2507,16 @@ const Odpt = (() => {
       minsLabel = `${bus.minsUntil}分`; cls = 'ok';
     }
 
+    // 通常時: cd-depart の後ろ / 運休・終バス後: cd-rt-badge-slot に挿入
     if (!badge) {
       badge = document.createElement('div');
       badge.id = 'cd-rt-badge';
       badge.className = 'rt-badge';
-      // cd-depart の後ろに追加
+      const slot   = card.querySelector('#cd-rt-badge-slot');
       const depart = card.querySelector('.cd-depart');
-      if (depart) depart.after(badge);
-      else card.appendChild(badge);
+      if (slot)        slot.appendChild(badge);
+      else if (depart) depart.after(badge);
+      else             card.appendChild(badge);
     }
 
     badge.innerHTML = `
