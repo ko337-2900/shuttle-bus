@@ -2576,6 +2576,20 @@ const Odpt = (() => {
           // 先頭16バイトを16進数で表示
           const bytes = new Uint8Array(buf).slice(0, 16);
           lines.push(`先頭bytes: ${Array.from(bytes).map(b => b.toString(16).padStart(2,'0')).join(' ')}`);
+          // パースして生のentity数を確認
+          try {
+            await initProto();
+            const msg = _FeedMsg.decode(new Uint8Array(buf));
+            const raw = msg.entity || [];
+            lines.push(`raw entity数: ${raw.length}`);
+            if (raw.length > 0) {
+              const e0 = raw[0];
+              lines.push(`entity[0]keys: ${Object.keys(e0).join(',')}`);
+              lines.push(`tripUpdate? ${!!e0.tripUpdate}`);
+            }
+          } catch(pe) {
+            lines.push(`parseエラー: ${pe.message}`);
+          }
         }
       } catch(e) {
         lines.push(`fetch失敗: ${e.message}`);
