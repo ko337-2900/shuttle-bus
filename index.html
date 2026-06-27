@@ -2574,6 +2574,56 @@ const Odpt = (() => {
     lines.push(`entities: ${_entities.length}件`);
     lines.push(`lastError: ${_lastError || 'なし'}`);
 
+    // 停留所マスタAPIで60001/60013に対応するGTFS stop_idを検索
+    if (cfg.key) {
+      try {
+        lines.push('\n=== 停留所マスタ検索中 ===');
+        const poleUrl = `https://api.odpt.org/api/v4/odpt:BusstopPole?odpt:operator=odpt.Operator:SeibuBus&acl:consumerKey=${encodeURIComponent(cfg.key)}`;
+        const poleRes = await fetch(poleUrl);
+        if (poleRes.ok) {
+          const poles = await poleRes.json();
+          lines.push(`取得: ${poles.length}件の停留所`);
+          
+          // 60001と60013を含むnoteを検索
+          const koganei = poles.find(p => p['odpt:note']?.includes('60001'));
+          const mansion = poles.find(p => p['odpt:note']?.includes('60013'));
+          
+          if (koganei) {
+            const title = koganei['dc:title'] || '?';
+            const note = koganei['odpt:note'] || '?';
+            const sameAs = koganei['owl:sameAs'] || '?';
+            lines.push(`\n🎯 60001 (駅): ${title}`);
+            lines.push(`  note: ${note}`);
+            lines.push(`  sameAs: ${sameAs}`);
+            
+            // sameAsから実際のstop_idを抽出（最後の部分）
+            const match = sameAs.match(/\.(\d+[-\d]+)$/);
+            if (match) {
+              lines.push(`  ✅ 推定GTFS stop_id: ${match[1]}`);
+            }
+          }
+          
+          if (mansion) {
+            const title = mansion['dc:title'] || '?';
+            const note = mansion['odpt:note'] || '?';
+            const sameAs = mansion['owl:sameAs'] || '?';
+            lines.push(`\n🎯 60013 (マンション): ${title}`);
+            lines.push(`  note: ${note}`);
+            lines.push(`  sameAs: ${sameAs}`);
+            
+            const match = sameAs.match(/\.(\d+[-\d]+)$/);
+            if (match) {
+              lines.push(`  ✅ 推定GTFS stop_id: ${match[1]}`);
+            }
+          }
+        } else {
+          lines.push(`停留所マスタ取得失敗: HTTP ${poleRes.status}`);
+        }
+      } catch(e) {
+        lines.push(`停留所マスタエラー: ${e.message}`);
+      }
+    }
+
     // 実際の停留所IDをリストアップ
     if (_entities.length > 0) {
       const allStopIds = new Set();
