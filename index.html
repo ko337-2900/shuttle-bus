@@ -2584,8 +2584,17 @@ const Odpt = (() => {
             lines.push(`raw entity数: ${raw.length}`);
             if (raw.length > 0) {
               const e0 = raw[0];
-              lines.push(`entity[0]keys: ${Object.keys(e0).join(',')}`);
+              const allKeys = Object.keys(e0).join(',');
+              lines.push(`entity[0]keys: ${allKeys}`);
               lines.push(`tripUpdate? ${!!e0.tripUpdate}`);
+              lines.push(`trip_update? ${!!e0.trip_update}`);
+              // toObjectで展開して確認
+              try {
+                const obj = raw[0].toJSON ? raw[0].toJSON() : JSON.parse(JSON.stringify(raw[0]));
+                const objKeys = Object.keys(obj).join(',');
+                lines.push(`toJSON keys: ${objKeys}`);
+                if(raw.length > 0) lines.push(`JSON[0]: ${JSON.stringify(obj).slice(0,80)}`);
+              } catch(je) { lines.push(`toJSON err: ${je.message}`); }
             }
           } catch(pe) {
             lines.push(`parseエラー: ${pe.message}`);
