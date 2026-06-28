@@ -9,7 +9,7 @@
 //   CACHE_VERSION を上げるだけで古いキャッシュが自動削除される
 // ─────────────────────────────────────────────────────────
 
-const CACHE_VERSION = 'v0.0.4'; // ← 更新時にここだけ変更する
+const CACHE_VERSION = 'v0.0.3'; // ← 更新時にここだけ変更する
 const CACHE_NAME    = `shuttle-${CACHE_VERSION}`;
 
 // cache-first で管理する静的アセット
@@ -19,7 +19,6 @@ const STATIC_ASSETS = [
   './app.json',
   './icon-192.png',
   './icon-512.png',
-  './protobuf.min.js',
 ];
 
 // network-first で管理するファイル（常に最新を取得）

@@ -878,45 +878,6 @@ body {
   font-weight: 600;
   cursor: pointer;
 }
-/* ─── ODPT リアルタイムバッジ ─── */
-.odpt-key-input {
-  width: 100%;
-  background: var(--chip-bg);
-  border: 1px solid var(--chip-border);
-  border-radius: 8px;
-  padding: 8px 12px;
-  font-size: 13px;
-  color: var(--text);
-  font-family: inherit;
-  -webkit-appearance: none;
-}
-/* カウントダウンカード内の西武バスバッジ */
-.rt-badge {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: rgba(255,255,255,0.07);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 10px;
-  padding: 7px 10px;
-  margin-top: 8px;
-  min-height: 38px;
-}
-.rt-badge-icon { font-size: 13px; flex-shrink: 0; }
-.rt-badge-label { font-size: 9px; color: rgba(255,255,255,0.5); letter-spacing: 0.5px; line-height: 1.3; }
-.rt-badge-mins { font-size: 18px; font-weight: 800; color: #fff; line-height: 1; }
-.rt-badge-mins.imminent { color: #ff6b6b; }
-.rt-badge-mins.soon     { color: #ffd060; }
-.rt-badge-mins.ok       { color: #7affa0; }
-.rt-badge-mins.none     { color: rgba(255,255,255,0.3); font-size: 13px; font-weight: 400; }
-/* upcoming-item内のリアルタイムバッジ */
-.ui-rt {
-  font-size: 10px;
-  color: var(--text3);
-  margin-top: 3px;
-}
-.ui-rt strong { color: var(--accent); font-size: 13px; font-weight: 700; }
-
 /* 徒歩バッジ */
 .walk-badge {
   display: inline-block;
@@ -1179,62 +1140,6 @@ body {
       </div>
       <div style="font-size:12px;color:var(--text3);padding:6px 16px 0;line-height:1.6">
         GPSで現在地を取得し、最も近い停留所に切り替えます。
-      </div>
-    </div>
-
-    <!-- 西武バス リアルタイム -->
-    <div class="settings-section">
-      <div class="settings-section-title">西武バス リアルタイム</div>
-      <div class="settings-card">
-        <div class="setting-row">
-          <div>
-            <div class="setting-label">ODPT consumerKey</div>
-            <div class="setting-sub">公共交通オープンデータAPI</div>
-          </div>
-        </div>
-        <div class="setting-row" style="padding:8px 14px">
-          <input type="text" id="odpt-key-input" class="odpt-key-input"
-            placeholder="キーを入力" spellcheck="false" autocomplete="off"
-            oninput="saveOdptKey(this.value)">
-        </div>
-        <div class="setting-row">
-          <div>
-            <div class="setting-label">小金井公園北 stop_id</div>
-            <div class="setting-sub">マンション内用（駅方面）</div>
-          </div>
-          <input type="text" id="odpt-stop-kgn" class="time-input" style="width:130px;font-size:12px"
-            placeholder="stop_id" oninput="saveOdptStops()">
-        </div>
-        <div class="setting-row">
-          <div>
-            <div class="setting-label">武蔵小金井駅 stop_id</div>
-            <div class="setting-sub">マンション外用（公園北方面）</div>
-          </div>
-          <input type="text" id="odpt-stop-msk" class="time-input" style="width:130px;font-size:12px"
-            placeholder="stop_id" oninput="saveOdptStops()">
-        </div>
-        <div class="setting-row">
-          <div>
-            <div class="setting-label">リアルタイム表示</div>
-            <div class="setting-sub">カウントダウンに西武バス情報を表示</div>
-          </div>
-          <div class="toggle-wrap">
-            <label class="toggle">
-              <input type="checkbox" id="tog-odpt" onchange="saveOdptEnabled(this.checked)">
-              <div class="toggle-track"></div>
-              <div class="toggle-thumb"></div>
-            </label>
-          </div>
-        </div>
-      </div>
-      <div style="font-size:12px;color:var(--text3);padding:6px 16px 0;line-height:1.6">
-        stop_idは ODPT Explorer で調べられます。<br>
-        キーは <a href="https://developer.odpt.org/" target="_blank" style="color:var(--text3)">developer.odpt.org</a> で取得。
-      </div>
-      <div style="padding:8px 16px 0">
-        <button class="setting-action-btn" onclick="Odpt.diagnose()" style="padding:10px 0;font-size:14px">
-          🔍 接続診断（データ取得できないときに押す）
-        </button>
       </div>
     </div>
 
@@ -1659,8 +1564,7 @@ function renderCountdown(){
       : '未定';
     card.innerHTML = `<div class="closed-icon">🚌</div>
       <div class="closed-title">本日は運休</div>
-      <div class="closed-next">次回運行：<strong>${ndLabel}</strong></div>
-      <div id="cd-rt-badge-slot"></div>`;
+      <div class="closed-next">次回運行：<strong>${ndLabel}</strong></div>`;
     return;
   }
 
@@ -1683,8 +1587,7 @@ function renderCountdown(){
       }
       card.innerHTML = `<div class="closed-icon">🌙</div>
         <div class="closed-title">本日の運行は終了しました</div>
-        <div class="closed-next">次回運行：<strong>${ndLabel}</strong></div>
-        <div id="cd-rt-badge-slot"></div>`;
+        <div class="closed-next">次回運行：<strong>${ndLabel}</strong></div>`;
     }
     return;
   }
@@ -2125,9 +2028,6 @@ async function init() {
   // アプリ情報を app.json から読み込み
   loadAppInfo();
 
-  // ODPT設定UIを反映
-  Odpt.applyUI();
-
   // 自己診断（非同期・バックグラウンドで実行）
   runDiagnostics(timetableOk);
 
@@ -2141,12 +2041,10 @@ async function init() {
     if (_currentTabIdx === TABS.indexOf('timetable')) {
       renderTimetable();
     }
-    // ODPTバッジも毎秒更新（取得済みデータを使って残り分数を再計算）
-    Odpt.updateRtBadge();
   }, 1000);
 }
 
-// init()はODPTコード定義後に呼び出す（→ファイル末尾参照）
+init();
 
 /* 乗車場所モード */
 function resolveStop(){
@@ -2316,418 +2214,6 @@ function showGpsError(msg, showRetry) {
   gpsSection.appendChild(div);
 }
 
-/* ═══════════════════════════════════════════════════════
-   ODPT GTFS-Realtime – 西武バスリアルタイム
-   流用可能関数: fetchGtfsRt / parseTripUpdates / findStop / getNearestBus
-═══════════════════════════════════════════════════════ */
-
-// ── proto定義（インライン） ──
-const GTFS_RT_PROTO = `
-syntax = "proto2";
-package transit_realtime;
-message FeedMessage {
-  required FeedHeader header = 1;
-  repeated FeedEntity entity = 2;
-}
-message FeedHeader {
-  required string gtfs_realtime_version = 1;
-  optional uint32 incrementality = 2;
-  optional uint64 timestamp = 3;
-}
-message FeedEntity {
-  required string id = 1;
-  optional bool is_deleted = 2;
-  optional TripUpdate trip_update = 3;
-}
-message TripUpdate {
-  required TripDescriptor trip = 1;
-  repeated StopTimeUpdate stop_time_update = 2;
-  optional VehicleDescriptor vehicle = 3;
-  optional uint64 timestamp = 4;
-  optional int32 delay = 5;
-}
-message TripDescriptor {
-  optional string trip_id = 1;
-  optional string start_time = 2;
-  optional string start_date = 3;
-  optional uint32 schedule_relationship = 4;
-  optional string route_id = 5;
-}
-message VehicleDescriptor {
-  optional string id = 1;
-  optional string label = 2;
-}
-message StopTimeUpdate {
-  optional uint32 stop_sequence = 1;
-  optional StopTimeEvent arrival = 2;
-  optional StopTimeEvent departure = 3;
-  optional string stop_id = 4;
-  optional uint32 schedule_relationship = 5;
-}
-message StopTimeEvent {
-  optional int32 delay = 1;
-  optional int64 time = 2;
-  optional int32 uncertainty = 3;
-}`;
-
-const ODPT_ENDPOINT = 'https://api.odpt.org/api/v4/gtfs/realtime/SeibuBus_trip_update';
-
-// ── GTFS-RT取得 ──
-async function fetchGtfsRt(consumerKey) {
-  const url = `${ODPT_ENDPOINT}?acl:consumerKey=${encodeURIComponent(consumerKey)}`;
-  const t0 = performance.now();
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-  // gzip圧縮の場合はDecompressionStreamで解凍、非対応環境はそのまま
-  let buffer;
-  const encoding = res.headers.get('content-encoding') || '';
-  if (encoding.includes('gzip') && typeof DecompressionStream !== 'undefined') {
-    const ds = new DecompressionStream('gzip');
-    const piped = res.body.pipeThrough(ds);
-    const reader = piped.getReader();
-    const chunks = [];
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      chunks.push(value);
-    }
-    const total = chunks.reduce((n, c) => n + c.byteLength, 0);
-    const merged = new Uint8Array(total);
-    let offset = 0;
-    for (const c of chunks) { merged.set(c, offset); offset += c.byteLength; }
-    buffer = merged.buffer;
-  } else {
-    buffer = await res.arrayBuffer();
-  }
-
-  return { buffer, size: buffer.byteLength, elapsed: Math.round(performance.now() - t0) };
-}
-
-// ── protobufパース ──
-function parseTripUpdates(buffer, FeedMessage) {
-  const msg = FeedMessage.decode(new Uint8Array(buffer));
-  return (msg.entity || []).filter(e => e.trip_update || e.tripUpdate);
-}
-
-// ── 停留所を検索 ──
-function findStop(entities, stopId) {
-  const results = [];
-  const nowSec = Date.now() / 1000;
-  for (const entity of entities) {
-    const tu = entity.trip_update || entity.tripUpdate;
-    if (!tu) continue;
-    const updates = tu.stop_time_update || tu.stopTimeUpdate || [];
-    for (const stu of updates) {
-      const sid = stu.stop_id || stu.stopId;
-      if (sid !== stopId) continue;
-      const dep = stu.departure && stu.departure.time ? Number(stu.departure.time) : null;
-      const arr = stu.arrival   && stu.arrival.time   ? Number(stu.arrival.time)   : null;
-      const t = dep || arr;
-      if (!t || t < nowSec - 60) continue;
-      const tripIdVal = (tu.trip && (tu.trip.trip_id || tu.trip.tripId)) || '';
-      const routeIdVal = (tu.trip && (tu.trip.route_id || tu.trip.routeId)) || '';
-      results.push({
-        tripId:        tripIdVal,
-        routeId:       routeIdVal,
-        departureTime: dep,
-        arrivalTime:   arr,
-        delay:         (stu.departure && stu.departure.delay) || (stu.arrival && stu.arrival.delay) || 0,
-      });
-    }
-  }
-  return results.sort((a,b) => (a.departureTime||a.arrivalTime||0) - (b.departureTime||b.arrivalTime||0));
-}
-
-// ── 次の1件を取得（既存アプリ流用用） ──
-function getNearestBus(entities, stopId) {
-  const hits = findStop(entities, stopId);
-  if (!hits.length) return null;
-  const first = hits[0];
-  const t = first.departureTime || first.arrivalTime;
-  if (!t) return null;
-  const minsUntil = Math.round((t - Date.now() / 1000) / 60);
-  return { minsUntil, departureTime: t, tripId: first.tripId, routeId: first.routeId };
-}
-
-// ── ODPT状態管理 ──
-const Odpt = (() => {
-  let _entities   = [];
-  let _FeedMsg    = null;
-  let _timer      = null;
-  let _loading    = false;
-  let _lastError  = null;
-
-  // 設定ロード
-  function loadOdptSettings() {
-    const raw = LS.get('shuttle_odpt');
-    return Object.assign({ key:'', stopKgn:'', stopMsk:'', enabled:false },
-      raw ? JSON.parse(raw) : {});
-  }
-  function saveOdptSettings(o) { LS.set('shuttle_odpt', JSON.stringify(o)); }
-
-  let cfg = loadOdptSettings();
-
-  // protobuf初期化
-  async function initProto() {
-    if (_FeedMsg) return;
-    if (typeof protobuf === 'undefined') throw new Error('protobufjs未ロード');
-    protobuf.util.Long = null;
-    protobuf.configure();
-    const root = protobuf.parse(GTFS_RT_PROTO, { keepCase: true }).root;
-    _FeedMsg = root.lookupType('transit_realtime.FeedMessage');
-  }
-
-  // データ取得
-  async function refresh() {
-    if (_loading || !cfg.key || !cfg.enabled) return;
-    _loading = true;
-    _lastError = null;
-    try {
-      await initProto();
-      const { buffer } = await fetchGtfsRt(cfg.key);
-      _entities = parseTripUpdates(buffer, _FeedMsg);
-      updateRtBadge();
-    } catch(e) {
-      _lastError = e.message;
-      console.warn('[ODPT]', e.message);
-      updateRtBadge(); // エラー状態でもバッジ更新
-    } finally {
-      _loading = false;
-    }
-  }
-
-  // 自動更新タイマー
-  function startTimer() {
-    stopTimer();
-    if (!cfg.enabled || !cfg.key) return;
-    refresh(); // 即時1回
-    _timer = setInterval(refresh, 30 * 1000);
-  }
-  function stopTimer() {
-    if (_timer) { clearInterval(_timer); _timer = null; }
-  }
-
-  // 現在の停留所に対応するstop_idを返す
-  function stopIdForCurrent() {
-    if (!STOPS.length) return null;
-    // 停留所インデックス → stop_id のマッピング
-    // 0=C棟(マンション内), 1=ステーション(マンション内), 2=武蔵小金井駅(マンション外)
-    if (currentStopIdx === 2) return cfg.stopMsk || null; // 駅にいる→公園北方面
-    return cfg.stopKgn || null;                            // マンション内→駅方面
-  }
-
-  // カウントダウンカードのバッジを更新
-  function updateRtBadge() {
-    const card = document.getElementById('countdown-card');
-    if (!card || !cfg.enabled) return;
-
-    let badge = document.getElementById('cd-rt-badge');
-
-    const stopId = stopIdForCurrent();
-    if (!stopId) {
-      if (badge) badge.remove();
-      return;
-    }
-
-    const bus = getNearestBus(_entities, stopId);
-    let minsLabel, cls;
-
-    if (!bus) {
-      minsLabel = 'データなし'; cls = 'none';
-    } else if (bus.minsUntil <= 0) {
-      minsLabel = 'まもなく'; cls = 'imminent';
-    } else if (bus.minsUntil <= 5) {
-      minsLabel = `${bus.minsUntil}分`; cls = 'soon';
-    } else {
-      minsLabel = `${bus.minsUntil}分`; cls = 'ok';
-    }
-
-    // 通常時: cd-depart の後ろ / 運休・終バス後: cd-rt-badge-slot に挿入
-    if (!badge) {
-      badge = document.createElement('div');
-      badge.id = 'cd-rt-badge';
-      badge.className = 'rt-badge';
-      const slot   = card.querySelector('#cd-rt-badge-slot');
-      const depart = card.querySelector('.cd-depart');
-      if (slot)        slot.appendChild(badge);
-      else if (depart) depart.after(badge);
-      else             card.appendChild(badge);
-    }
-
-    badge.innerHTML = `
-      <span class="rt-badge-icon">🚌</span>
-      <div>
-        <div class="rt-badge-label">西武バス　リアルタイム</div>
-        <div class="rt-badge-mins ${cls}">${minsLabel}</div>
-      </div>`;
-  }
-
-  // 診断：画面上にエラー内容を表示する
-  async function diagnose() {
-    const lines = [];
-    lines.push(`protobuf: ${typeof protobuf !== 'undefined' ? '✅ロード済' : '❌未ロード'}`);
-    lines.push(`enabled: ${cfg.enabled ? '✅ON' : '❌OFF'}`);
-    lines.push(`key: ${cfg.key ? '✅あり(' + cfg.key.slice(0,8) + '…)' : '❌なし'}`);
-    lines.push(`stopKgn: ${cfg.stopKgn || '❌未設定'}`);
-    lines.push(`stopMsk: ${cfg.stopMsk || '❌未設定'}`);
-    lines.push(`entities: ${_entities.length}件`);
-    lines.push(`lastError: ${_lastError || 'なし'}`);
-
-    // 停留所マスタAPIで60001/60013に対応するGTFS stop_idを検索
-    if (cfg.key) {
-      try {
-        lines.push('\n=== 停留所マスタ検索中 ===');
-        const poleUrl = `https://api.odpt.org/api/v4/odpt:BusstopPole?odpt:operator=odpt.Operator:SeibuBus&acl:consumerKey=${encodeURIComponent(cfg.key)}`;
-        const poleRes = await fetch(poleUrl);
-        if (poleRes.ok) {
-          const poles = await poleRes.json();
-          lines.push(`取得: ${poles.length}件の停留所`);
-          
-          // 60001と60013を含むnoteを検索
-          const koganei = poles.find(p => p['odpt:note']?.includes('60001'));
-          const mansion = poles.find(p => p['odpt:note']?.includes('60013'));
-          
-          if (koganei) {
-            const title = koganei['dc:title'] || '?';
-            const note = koganei['odpt:note'] || '?';
-            const sameAs = koganei['owl:sameAs'] || '?';
-            lines.push(`\n🎯 60001 (駅): ${title}`);
-            lines.push(`  note: ${note}`);
-            lines.push(`  sameAs: ${sameAs}`);
-            
-            // sameAsから実際のstop_idを抽出（最後の部分）
-            const match = sameAs.match(/\.(\d+[-\d]+)$/);
-            if (match) {
-              lines.push(`  ✅ 推定GTFS stop_id: ${match[1]}`);
-            }
-          }
-          
-          if (mansion) {
-            const title = mansion['dc:title'] || '?';
-            const note = mansion['odpt:note'] || '?';
-            const sameAs = mansion['owl:sameAs'] || '?';
-            lines.push(`\n🎯 60013 (マンション): ${title}`);
-            lines.push(`  note: ${note}`);
-            lines.push(`  sameAs: ${sameAs}`);
-            
-            const match = sameAs.match(/\.(\d+[-\d]+)$/);
-            if (match) {
-              lines.push(`  ✅ 推定GTFS stop_id: ${match[1]}`);
-            }
-          }
-        } else {
-          lines.push(`停留所マスタ取得失敗: HTTP ${poleRes.status}`);
-        }
-      } catch(e) {
-        lines.push(`停留所マスタエラー: ${e.message}`);
-      }
-    }
-
-    // 実際の停留所IDをリストアップ
-    if (_entities.length > 0) {
-      const allStopIds = new Set();
-      for (const entity of _entities.slice(0, 10)) { // 最初の10件から収集
-        const tu = entity.trip_update || entity.tripUpdate;
-        if (!tu) continue;
-        const updates = tu.stop_time_update || tu.stopTimeUpdate || [];
-        for (const stu of updates) {
-          const sid = stu.stop_id || stu.stopId;
-          if (sid) allStopIds.add(sid);
-        }
-      }
-      const uniqueIds = Array.from(allStopIds).sort();
-      lines.push(`\n=== 実際のstop_id一覧（${uniqueIds.length}件） ===`);
-      uniqueIds.forEach(id => lines.push(`  ${id}`));
-      
-      // 60013や60001を含むものを強調表示
-      const matches = uniqueIds.filter(id => id.includes('60013') || id.includes('60001'));
-      if (matches.length > 0) {
-        lines.push(`\n🎯 60013/60001を含むID: ${matches.join(', ')}`);
-      }
-    }
-
-    // 実際にfetchを試みてエラーを取得
-    if (cfg.key) {
-      try {
-        lines.push('\nfetch試行中…');
-        const url = `${ODPT_ENDPOINT}?acl:consumerKey=${encodeURIComponent(cfg.key)}`;
-        const res = await fetch(url);
-        lines.push(`fetch: HTTP ${res.status} ${res.ok ? '✅' : '❌'}`);
-        lines.push(`encoding: ${res.headers.get('content-encoding') || 'なし'}`);
-        lines.push(`content-type: ${res.headers.get('content-type') || 'なし'}`);
-        if (!res.ok) {
-          const body = await res.text().catch(() => '');
-          lines.push(`body: ${body.slice(0, 100)}`);
-        } else {
-          const buf = await res.arrayBuffer();
-          lines.push(`size: ${buf.byteLength} bytes ✅`);
-          // 先頭16バイトを16進数で表示
-          const bytes = new Uint8Array(buf).slice(0, 16);
-          lines.push(`先頭bytes: ${Array.from(bytes).map(b => b.toString(16).padStart(2,'0')).join(' ')}`);
-          // パースして生のentity数を確認
-          try {
-            await initProto();
-            const msg = _FeedMsg.decode(new Uint8Array(buf));
-            const raw = msg.entity || [];
-            lines.push(`raw entity数: ${raw.length}`);
-            if (raw.length > 0) {
-              const e0 = raw[0];
-              const allKeys = Object.keys(e0).join(',');
-              lines.push(`entity[0]keys: ${allKeys}`);
-              lines.push(`tripUpdate? ${!!e0.tripUpdate}`);
-              lines.push(`trip_update? ${!!e0.trip_update}`);
-            }
-          } catch(pe) {
-            lines.push(`parseエラー: ${pe.message}`);
-          }
-        }
-      } catch(e) {
-        lines.push(`fetch失敗: ${e.message}`);
-      }
-    }
-
-    showToast(lines.slice(0, 3).join(' / '));
-    // 詳細はalertで表示
-    alert('ODPT診断結果\n\n' + lines.join('\n'));
-  }
-
-  // 公開API
-  return {
-    get cfg()      { return cfg; },
-    get entities() { return _entities; },
-    get lastError(){ return _lastError; },
-    load()  { cfg = loadOdptSettings(); },
-    saveKey(v) { cfg.key = v; saveOdptSettings(cfg); if(cfg.enabled) startTimer(); },
-    saveStops() {
-      cfg.stopKgn = (document.getElementById('odpt-stop-kgn')?.value||'').trim();
-      cfg.stopMsk = (document.getElementById('odpt-stop-msk')?.value||'').trim();
-      saveOdptSettings(cfg);
-    },
-    setEnabled(v) { cfg.enabled = v; saveOdptSettings(cfg); v ? startTimer() : stopTimer(); updateRtBadge(); },
-    applyUI() {
-      const si = id => document.getElementById(id);
-      if(si('odpt-key-input'))  si('odpt-key-input').value  = cfg.key;
-      if(si('odpt-stop-kgn'))   si('odpt-stop-kgn').value   = cfg.stopKgn;
-      if(si('odpt-stop-msk'))   si('odpt-stop-msk').value   = cfg.stopMsk;
-      if(si('tog-odpt'))        si('tog-odpt').checked       = cfg.enabled;
-    },
-    start:    startTimer,
-    refresh,
-    diagnose,
-    updateRtBadge,
-    stopIdForCurrent,
-  };
-})();
-
-// 設定画面のハンドラ（HTMLのoninputから呼ぶ）
-function saveOdptKey(v)      { Odpt.saveKey(v); }
-function saveOdptStops()     { Odpt.saveStops(); }
-function saveOdptEnabled(v)  { Odpt.setEnabled(v); }
-
-// ODPTコード定義完了後にアプリ初期化
-init();
-
 /* PWA – Service Worker登録 & 更新時自動リロード */
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js').then(reg => {
@@ -2801,9 +2287,7 @@ function showToast(msg){
   _toastTimer = setTimeout(()=>t.classList.remove('show'), 2800);
 }
 
+
 </script>
-<!-- protobuf.js ローカル – ODPT解析用（onloadでOdpt.start()） -->
-<script src="./protobuf.min.js"
-  onload="Odpt.start()" onerror="console.warn('[ODPT] protobufjs 読み込み失敗')"></script>
 </body>
 </html>
