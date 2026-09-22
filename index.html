@@ -383,7 +383,7 @@ body {
   border-radius: 14px;
   margin-bottom: 14px;
   overflow: visible;
-  direction: rtl; /* 右から左に伸びる */
+  position: relative;
 }
 .cd-progress-bar {
   height: 100%;
@@ -978,18 +978,18 @@ body {
 <body>
 
 <!-- ── HEADER ── -->
-<header class="app-header">
+<header class="app-header" role="banner">
   <div class="header-row">
     <div class="header-left">
-      <div class="eyebrow">シティハウス小金井公園</div>
+      <div class="eyebrow" aria-label="サービス名">シティハウス小金井公園</div>
       <h1>シャトルバス</h1>
     </div>
-    <div class="stop-chip" id="stop-chip">
+    <div class="stop-chip" id="stop-chip" aria-label="現在表示中の停留所">
       <span class="sc-label">表示中</span>
       <span class="sc-name" id="sc-name">C棟エントランス前</span>
     </div>
   </div>
-  <div class="route-row">
+  <div class="route-row" role="text" aria-label="運行ルート">
     <span class="rs">C棟</span>
     <span class="ra">→</span>
     <span class="rs">シャトルバスステーション前</span>
@@ -999,17 +999,17 @@ body {
 </header>
 
 <!-- ── TABS ── -->
-<nav class="tab-bar">
-  <button class="tab active" id="tab-next" onclick="showView('next')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M2 9h20"/><path d="M8 3v6"/><path d="M16 3v6"/><circle cx="7" cy="20" r="1.5"/><circle cx="17" cy="20" r="1.5"/><path d="M5 17v3"/><path d="M19 17v3"/></svg>
+<nav class="tab-bar" role="tablist" aria-label="メイン機能">
+  <button class="tab active" id="tab-next" onclick="showView('next')" role="tab" aria-selected="true" aria-controls="view-next">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M2 9h20"/><path d="M8 3v6"/><path d="M16 3v6"/><circle cx="7" cy="20" r="1.5"/><circle cx="17" cy="20" r="1.5"/><path d="M5 17v3"/><path d="M19 17v3"/></svg>
     <span>次のバス</span>
   </button>
-  <button class="tab" id="tab-timetable" onclick="showView('timetable')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="14" x2="8" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="16" y1="14" x2="16" y2="14"/></svg>
+  <button class="tab" id="tab-timetable" onclick="showView('timetable')" role="tab" aria-selected="false" aria-controls="view-timetable">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="14" x2="8" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="16" y1="14" x2="16" y2="14"/></svg>
     <span>時刻表</span>
   </button>
-  <button class="tab" id="tab-settings" onclick="showView('settings')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+  <button class="tab" id="tab-settings" onclick="showView('settings')" role="tab" aria-selected="false" aria-controls="view-settings">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
     <span>設定</span>
   </button>
 </nav>
@@ -1027,11 +1027,11 @@ body {
        NEXT BUS VIEW
   ══════════════════════════════════════ -->
   <div class="slide-container" id="slide-container">
-  <div id="view-next" class="view-panel">
-    <div class="glass countdown-card" id="countdown-card"></div>
+  <div id="view-next" class="view-panel" role="tabpanel" aria-labelledby="tab-next">
+    <div class="glass countdown-card" id="countdown-card" aria-live="polite" aria-label="次のバス情報"></div>
 
     <p class="section-label" id="upcoming-label">その後の便</p>
-    <div class="upcoming-list" id="upcoming-list"></div>
+    <div class="upcoming-list" id="upcoming-list" role="list" aria-label="その後の便一覧"></div>
 
     <div class="notice">
       ※土・日・祝、夏季休暇（3日間）並びに年末年始は運休となります。<br>
@@ -1043,11 +1043,11 @@ body {
   <!-- ══════════════════════════════════════
        TIMETABLE VIEW
   ══════════════════════════════════════ -->
-  <div id="view-timetable" class="view-panel">
-    <div class="stop-selector">
-      <button class="stop-btn active" onclick="setTimetableStop(0,this)">C棟</button>
-      <button class="stop-btn"        onclick="setTimetableStop(1,this)">シャトルバスステーション</button>
-      <button class="stop-btn"        onclick="setTimetableStop(2,this)">武蔵小金井駅</button>
+  <div id="view-timetable" class="view-panel" role="tabpanel" aria-labelledby="tab-timetable">
+    <div class="stop-selector" role="tablist" aria-label="停留所選択">
+      <button class="stop-btn active" onclick="setTimetableStop(0,this)" role="tab" aria-selected="true">C棟</button>
+      <button class="stop-btn"        onclick="setTimetableStop(1,this)" role="tab" aria-selected="false">シャトルバスステーション</button>
+      <button class="stop-btn"        onclick="setTimetableStop(2,this)" role="tab" aria-selected="false">武蔵小金井駅</button>
     </div>
     <div class="tt-now-row">現在時刻 <span class="tt-time" id="tt-time">--:--</span></div>
     <div id="timetable-body"></div>
@@ -1062,7 +1062,7 @@ body {
   <!-- ══════════════════════════════════════
        SETTINGS VIEW
   ══════════════════════════════════════ -->
-  <div id="view-settings" class="view-panel">
+  <div id="view-settings" class="view-panel" role="tabpanel" aria-labelledby="tab-settings">
 
     <!-- 乗車場所の決め方 -->
     <div class="settings-section">
@@ -1340,7 +1340,7 @@ async function loadTimetable() {
 
     // データ構造の検証
     if (!data || !Array.isArray(data.routes) || !data.routes[0]) {
-      throw new Error('timetable.json の構造が不正です');
+      throw new Error('時刻表データの形式が正しくありません');
     }
 
     // 最初のルートを使用（将来: route IDで切替可能）
@@ -1351,6 +1351,7 @@ async function loadTimetable() {
     // データなし（土日など未定義ダイヤ）の場合
     if (STOPS.every(s => s.times.length === 0)) {
       console.warn('[Timetable] No schedule for dayType:', dayType);
+      showErrorNotification('本日は運休日です', 'info');
     }
 
     // 祝日・特別休業日を JSON からセット（HTML側に直書き不要）
@@ -1367,10 +1368,23 @@ async function loadTimetable() {
 
     return true; // 成功
   } catch (err) {
-    const msg = err.name === 'AbortError'
-      ? 'タイムアウト（8秒）'
-      : err.message;
-    console.error('[Timetable] 読み込み失敗:', msg, err);
+    let errorMsg = 'データの読み込みに失敗しました';
+    let errorType = 'error';
+    
+    if (err.name === 'AbortError') {
+      errorMsg = 'ネットワーク接続がタイムアウトしました';
+      errorType = 'warning';
+    } else if (err.message.includes('HTTP 404')) {
+      errorMsg = '時刻表ファイルが見つかりません';
+    } else if (err.message.includes('JSON')) {
+      errorMsg = '時刻表データの形式エラーです';
+    } else if (err.message.includes('ネットワーク')) {
+      errorMsg = 'インターネット接続を確認してください';
+      errorType = 'warning';
+    }
+    
+    console.error('[Timetable] 読み込み失敗:', err.message, err);
+    showErrorNotification(errorMsg, errorType);
     STOPS = []; // フォールバック: 空データで継続
     return false; // 失敗
   }
@@ -1626,7 +1640,7 @@ function renderCountdown(){
       <div class="cd-secs" id="cd-secs">${p(secs)} 秒</div>
       <div class="cd-progress-wrap">
         <div class="cd-progress-bar" id="cd-bar" style="width:${pct}%"></div>
-        <div class="walker ${walkerClass(diffS, stop.walkSecs)}" id="cd-walker" style="right:${Math.max(0,pct-3)}%">${walkerEmoji(diffS, stop.walkSecs)}</div>
+        <div class="walker ${walkerClass(diffS, stop.walkSecs)}" id="cd-walker" style="left:${Math.max(0,pct-3)}%">${walkerEmoji(diffS, stop.walkSecs)}</div>
       </div>
       <div class="cd-depart">
         <div>
@@ -1662,7 +1676,7 @@ function renderCountdown(){
   const walkerEl = DOM.cdWalker || document.getElementById('cd-walker');
   if(walkerEl && STOPS[currentStopIdx]){
     const wStop = STOPS[currentStopIdx];
-    walkerEl.style.right   = Math.max(0, pct - 3) + '%';
+    walkerEl.style.left    = Math.max(0, pct - 3) + '%';
     walkerEl.textContent   = walkerEmoji(diffS, wStop.walkSecs);
     walkerEl.className     = 'walker ' + walkerClass(diffS, wStop.walkSecs);
   }
@@ -1824,7 +1838,9 @@ function smoothScrollTo(el, target, duration) {
 function setTimetableStop(idx, btn){
   timetableStopIdx = idx;
   document.querySelectorAll('.stop-btn').forEach((b,i)=>{
-    b.classList.toggle('active', i===idx);
+    const isActive = i === idx;
+    b.classList.toggle('active', isActive);
+    b.setAttribute('aria-selected', isActive.toString());
   });
   renderTimetable();
   setTimeout(scrollToNowLine, 80);
@@ -1866,7 +1882,10 @@ function showView(v, direction) {
 
   // タブのアクティブ状態を更新
   TABS.forEach(id => {
-    document.getElementById('tab-' + id).classList.toggle('active', id === v);
+    const tab = document.getElementById('tab-' + id);
+    const isActive = id === v;
+    tab.classList.toggle('active', isActive);
+    tab.setAttribute('aria-selected', isActive.toString());
   });
 
   // 全パネルを先頭に戻す
@@ -2031,17 +2050,54 @@ async function init() {
   // 自己診断（非同期・バックグラウンドで実行）
   runDiagnostics(timetableOk);
 
-  // 毎秒更新タイマー
-  setInterval(() => {
-    if (S.stopMode === 'auto') {
-      const auto = stopByTime();
-      if (auto !== currentStopIdx) setStop(auto, null, true);
+  // 毎秒更新タイマー（バックグラウンド対応）
+  let updateTimer = null;
+  let isPageVisible = true;
+
+  function startTimer() {
+    if (updateTimer) return; // 既に動作中
+    updateTimer = setInterval(() => {
+      if (S.stopMode === 'auto') {
+        const auto = stopByTime();
+        if (auto !== currentStopIdx) setStop(auto, null, true);
+      }
+      renderCountdown();
+      if (_currentTabIdx === TABS.indexOf('timetable')) {
+        renderTimetable();
+      }
+    }, 1000);
+  }
+
+  function stopTimer() {
+    if (updateTimer) {
+      clearInterval(updateTimer);
+      updateTimer = null;
     }
-    renderCountdown();
-    if (_currentTabIdx === TABS.indexOf('timetable')) {
-      renderTimetable();
+  }
+
+  // Page Visibility API でバックグラウンド時の更新を制御
+  function handleVisibilityChange() {
+    isPageVisible = !document.hidden;
+    
+    if (isPageVisible) {
+      console.log('[Timer] ページが前面に戻りました - タイマー再開');
+      // 即座に画面を更新してから定期更新開始
+      renderCountdown();
+      if (_currentTabIdx === TABS.indexOf('timetable')) {
+        renderTimetable();
+      }
+      startTimer();
+    } else {
+      console.log('[Timer] ページがバックグラウンドになりました - タイマー停止');
+      stopTimer();
     }
-  }, 1000);
+  }
+
+  // イベントリスナーを登録
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+
+  // 初期タイマー開始
+  startTimer();
 }
 
 init();
@@ -2173,7 +2229,7 @@ function detectNearestStop() {
       showGpsError(msg, true); // 再取得ボタンあり
     },
 
-    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
   );
 }
 
@@ -2224,14 +2280,16 @@ if ('serviceWorker' in navigator) {
       newWorker.addEventListener('statechange', () => {
         // activated になったらページをリロードして新バージョンを反映
         if (newWorker.state === 'activated') {
-          console.log('[SW] 新バージョンに更新しました。リロードします。');
-          location.reload();
+          console.log('[SW] 新バージョンに更新しました。');
+          showErrorNotification('アプリが更新されました。まもなく再読み込みします', 'info');
+          setTimeout(() => location.reload(), 2000);
         }
       });
     });
 
   }).catch(err => {
     console.error('[SW] 登録失敗:', err);
+    showErrorNotification('オフライン機能の設定に失敗しました', 'warning');
   });
 }
 
@@ -2285,6 +2343,75 @@ function showToast(msg){
   t.classList.add('show');
   clearTimeout(_toastTimer);
   _toastTimer = setTimeout(()=>t.classList.remove('show'), 2800);
+}
+
+// エラー通知システム
+function showErrorNotification(message, type = 'error') {
+  // type: 'error', 'warning', 'info'
+  const icons = {
+    error: '❌',
+    warning: '⚠️',
+    info: 'ℹ️'
+  };
+  
+  const colors = {
+    error: '#e74c3c',
+    warning: '#f39c12', 
+    info: '#3498db'
+  };
+
+  // 既存のエラー通知を削除
+  const existing = document.querySelector('.error-notification');
+  if (existing) existing.remove();
+
+  const notification = document.createElement('div');
+  notification.className = 'error-notification';
+  notification.innerHTML = `
+    <div style="
+      position: fixed;
+      top: calc(var(--safe-top) + 80px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: ${colors[type]};
+      color: white;
+      padding: 12px 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+      font-size: 14px;
+      font-weight: 600;
+      z-index: 1000;
+      max-width: 90vw;
+      text-align: center;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      animation: slideDown 0.3s ease;
+    " role="alert" aria-live="assertive">
+      ${icons[type]} ${message}
+    </div>
+  `;
+
+  // アニメーション用CSS
+  if (!document.querySelector('#error-notification-styles')) {
+    const style = document.createElement('style');
+    style.id = 'error-notification-styles';
+    style.textContent = `
+      @keyframes slideDown {
+        from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+        to { opacity: 1; transform: translateX(-50%) translateY(0); }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  document.body.appendChild(notification);
+
+  // 5秒後に自動削除
+  setTimeout(() => {
+    if (notification.parentNode) {
+      notification.style.animation = 'slideDown 0.3s ease reverse';
+      setTimeout(() => notification.remove(), 300);
+    }
+  }, 5000);
 }
 
 
